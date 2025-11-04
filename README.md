@@ -1,520 +1,417 @@
-# Explorador de Datos de Spotify - Ejercicio Final MAI
+# Music Tracks Explorer 🎵
 
-## 📋 Descripción del Proyecto
+Aplicación web completa para explorar, analizar y gestionar pistas musicales con búsquedas avanzadas, visualizaciones de datos y panel de administración.
 
-Aplicación web full-stack para la exploración y análisis de datos de pistas de Spotify. Implementa un sistema completo con búsqueda compleja, agregaciones de datos, autenticación de usuarios y panel de administración CRUD.
-
-**Universidad Alfonso X el Sabio**  
-**Asignatura:** Modelado Avanzado de la Información  
-**Tecnologías:** React + TypeScript (Frontend) | PostgreSQL + Supabase (Backend)
-
----
+![Music Tracks Explorer](src/assets/logo.png)
 
 ## 🎯 Características Principales
 
-### 1. **Búsqueda Compleja (Multi-campo)**
-- Búsqueda por texto: nombre de canción y artista
-- Filtros por rangos numéricos múltiples:
-  - **Energy** (Energía): 0.0 - 1.0
-  - **Danceability** (Bailabilidad): 0.0 - 1.0
-  - **Popularity** (Popularidad): 0 - 100
-- Simulación de búsqueda tipo MongoDB usando operadores PostgreSQL
+- **Exploración de Pistas**: Búsqueda compleja con filtros por texto, energía, bailabilidad y popularidad
+- **Dashboard Analítico**: Visualización de estadísticas agregadas por género y ranking de pistas más populares
+- **Panel de Administración**: Sistema CRUD completo para gestión de pistas (solo para administradores)
+- **Autenticación JWT**: Sistema de usuarios con roles y permisos
+- **Diseño Responsivo**: Interfaz moderna inspirada en los colores del logo (verde brillante + azul)
 
-### 2. **Framework de Agregación**
-- Estadísticas por género musical:
-  - Promedio de tempo (BPM)
-  - Promedio de energía
-  - Promedio de popularidad
-  - Conteo de canciones por género
-- Top 10 canciones más populares
+## 📋 Estructura del Proyecto
 
-### 3. **Sistema de Autenticación**
-- Registro y login de usuarios
-- Autenticación JWT via Supabase Auth
-- Sistema de roles (usuario/admin)
-- Protección de rutas por rol
-
-### 4. **Panel de Administración (CRUD)**
-- **Crear:** Añadir nuevas pistas con validación
-- **Buscar:** Búsqueda integrada para encontrar pistas
-- **Actualizar:** Editar datos de pistas existentes
-- **Eliminar:** Borrado de pistas con confirmación
-- Acceso exclusivo para administradores
-
----
-
-## 🗄️ Estructura de la Base de Datos
-
-### Tabla: `tracks`
-Almacena información detallada de las pistas de Spotify.
-
-| Campo | Tipo | Descripción | Rango/Formato |
-|-------|------|-------------|---------------|
-| `id` | UUID | Identificador único (PK) | Auto-generado |
-| `name` | TEXT | Nombre de la canción | Requerido, max 200 chars |
-| `artist_name` | TEXT | Nombre del artista | Requerido, max 200 chars |
-| `year` | INTEGER | Año de lanzamiento | 1900 - Año actual |
-| `genre` | TEXT | Género musical | Requerido, max 100 chars |
-| `popularity` | INTEGER | Índice de popularidad | 0 - 100 |
-| `energy` | NUMERIC | Nivel de energía | 0.0 - 1.0 |
-| `danceability` | NUMERIC | Bailabilidad | 0.0 - 1.0 |
-| `tempo` | NUMERIC | Tempo en BPM | 0 - 300 |
-| `duration_ms` | INTEGER | Duración en milisegundos | > 0 |
-| `valence` | NUMERIC | Valencia (positividad) | 0.0 - 1.0 |
-| `created_at` | TIMESTAMP | Fecha de creación | Auto-generado |
-| `updated_at` | TIMESTAMP | Fecha de actualización | Auto-actualizado |
-
-#### Índices Creados (Optimización):
-```sql
--- Índice para búsqueda por nombre y artista (simula índice de texto MongoDB)
-CREATE INDEX idx_tracks_name ON tracks(name);
-CREATE INDEX idx_tracks_artist ON tracks(artist_name);
-
--- Índice compuesto para ordenación por popularidad y energía
-CREATE INDEX idx_tracks_popularity_energy ON tracks(popularity DESC, energy DESC);
-
--- Índice para filtrado por año
-CREATE INDEX idx_tracks_year ON tracks(year);
+```
+music-tracks-explorer/
+├── frontend/              # Aplicación React + TypeScript
+│   ├── src/
+│   │   ├── components/    # Componentes reutilizables
+│   │   ├── pages/         # Páginas principales
+│   │   ├── contexts/      # Context API (AuthContext)
+│   │   └── integrations/  # Clientes de servicios externos
+│   └── public/
+│
+├── backend/               # API RESTful (a implementar localmente)
+│   ├── src/
+│   │   ├── models/        # Modelos MongoDB (Mongoose)
+│   │   ├── routes/        # Rutas de la API
+│   │   ├── controllers/   # Lógica de negocio
+│   │   ├── middleware/    # Autenticación JWT
+│   │   └── config/        # Configuración MongoDB
+│   └── server.js
+│
+└── README.md
 ```
 
-### Tabla: `profiles`
-Almacena información adicional de los usuarios.
+## 🗄️ Estructura de Base de Datos MongoDB
 
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `id` | UUID | Referencia a auth.users (PK) |
-| `username` | TEXT | Nombre de usuario único |
-| `created_at` | TIMESTAMP | Fecha de creación |
+### Colección: `tracks`
 
-### Tabla: `user_roles`
-Gestiona los roles de usuario (seguridad crítica).
-
-| Campo | Tipo | Descripción | Valores |
-|-------|------|-------------|---------|
-| `id` | UUID | Identificador único (PK) | Auto-generado |
-| `user_id` | UUID | Referencia a auth.users | FK |
-| `role` | ENUM | Rol del usuario | 'user', 'admin' |
-
-#### Función de Seguridad:
-```sql
--- Función para verificar rol de admin (usado en RLS)
-CREATE FUNCTION is_admin(user_id uuid) RETURNS boolean
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM user_roles
-    WHERE user_roles.user_id = $1 AND role = 'admin'
-  )
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
-```
-
-### Políticas de Seguridad (RLS - Row Level Security)
-
-**Tracks:**
-- SELECT: Acceso público (cualquiera puede ver)
-- INSERT/UPDATE/DELETE: Solo administradores
-
-**Profiles:**
-- SELECT: Acceso público
-- INSERT/UPDATE: Solo el propio usuario
-
-**User_roles:**
-- SELECT: Acceso público
-- INSERT: Solo administradores
-
----
-
-## 🔌 API / Rutas de la Aplicación
-
-### Frontend Routes
-
-| Ruta | Componente | Acceso | Descripción |
-|------|-----------|--------|-------------|
-| `/` | Index | Público | Página de inicio |
-| `/auth` | Auth | Público | Login/Registro |
-| `/explore` | Explore | Público | Búsqueda compleja de pistas |
-| `/dashboard` | Dashboard | Público | Estadísticas y agregaciones |
-| `/admin` | Admin | Solo Admin | Panel CRUD completo |
-
-### Backend Queries (Supabase Client)
-
-#### 1. **Búsqueda Compleja (GET /tracks con filtros)**
-```typescript
-// Simulación de consulta MongoDB con múltiples filtros
-let query = supabase.from("tracks").select("*");
-
-// Búsqueda de texto (equivalente a $text en MongoDB)
-if (searchQuery) {
-  query = query.or(
-    `name.ilike.%${searchQuery}%,artist_name.ilike.%${searchQuery}%`
-  );
-}
-
-// Filtros de rango (equivalente a $gte, $lte en MongoDB)
-query = query
-  .gte("energy", minEnergy)
-  .lte("energy", maxEnergy)
-  .gte("danceability", minDanceability)
-  .lte("danceability", maxDanceability)
-  .gte("popularity", minPopularity)
-  .lte("popularity", maxPopularity);
-
-const { data, error } = await query;
-```
-
-**Equivalente MongoDB:**
 ```javascript
-db.tracks.find({
-  $text: { $search: "love" },
-  energy: { $gte: 0.8, $lte: 1.0 },
-  danceability: { $gte: 0.5, $lte: 1.0 },
-  popularity: { $gte: 50, $lte: 100 }
+{
+  _id: ObjectId,
+  name: String,           // Nombre de la pista
+  artist_name: String,    // Nombre del artista
+  album_name: String,     // Nombre del álbum
+  genre: String,          // Género musical
+  release_year: Number,   // Año de lanzamiento
+  duration_ms: Number,    // Duración en milisegundos
+  energy: Number,         // Energía (0.0 - 1.0)
+  danceability: Number,   // Bailabilidad (0.0 - 1.0)
+  valence: Number,        // Valencia emocional (0.0 - 1.0)
+  tempo: Number,          // Tempo en BPM
+  popularity: Number,     // Popularidad (0 - 100)
+  created_at: Date,       // Fecha de creación
+  updated_at: Date        // Fecha de actualización
+}
+```
+
+**Índices recomendados:**
+```javascript
+// Para búsquedas de texto
+db.tracks.createIndex({ name: "text", artist_name: "text" })
+
+// Para filtros numéricos
+db.tracks.createIndex({ energy: 1 })
+db.tracks.createIndex({ danceability: 1 })
+db.tracks.createIndex({ popularity: -1 })
+db.tracks.createIndex({ genre: 1 })
+```
+
+### Colección: `users`
+
+```javascript
+{
+  _id: ObjectId,
+  email: String,          // Email único
+  password: String,       // Hash de contraseña (bcrypt)
+  role: String,           // "user" o "admin"
+  created_at: Date,
+  updated_at: Date
+}
+```
+
+**Índices:**
+```javascript
+db.users.createIndex({ email: 1 }, { unique: true })
+```
+
+### Colección: `profiles`
+
+```javascript
+{
+  _id: ObjectId,
+  user_id: ObjectId,      // Referencia a users._id
+  display_name: String,
+  avatar_url: String,
+  created_at: Date,
+  updated_at: Date
+}
+```
+
+## 🛣️ Rutas del Backend (API RESTful)
+
+### Autenticación
+- `POST /api/auth/signup` - Registro de usuario
+- `POST /api/auth/login` - Inicio de sesión (retorna JWT)
+- `GET /api/auth/me` - Obtener usuario actual (requiere JWT)
+
+### Pistas (Tracks)
+- `GET /api/tracks` - Obtener todas las pistas con filtros opcionales
+  - Query params: `search`, `energyMin`, `energyMax`, `danceabilityMin`, `danceabilityMax`, `popularityMin`, `popularityMax`
+- `GET /api/tracks/:id` - Obtener una pista por ID
+- `POST /api/tracks` - Crear pista (solo admin)
+- `PUT /api/tracks/:id` - Actualizar pista (solo admin)
+- `DELETE /api/tracks/:id` - Eliminar pista (solo admin)
+
+### Dashboard
+- `GET /api/dashboard/genre-stats` - Estadísticas agregadas por género
+- `GET /api/dashboard/top-popular` - Top 10 pistas más populares
+
+## 🚀 Instalación y Configuración Local
+
+### Requisitos Previos
+- Node.js 18+
+- MongoDB 6.0+
+- npm o yarn
+
+### 1. Configurar MongoDB Local
+
+```bash
+# Iniciar MongoDB
+mongod --dbpath /path/to/your/data
+
+# Crear base de datos e insertar datos de ejemplo
+mongosh
+use music_tracks_db
+
+# Insertar datos de ejemplo (ver sección más abajo)
+```
+
+### 2. Configurar Backend
+
+```bash
+# Crear carpeta backend
+mkdir backend && cd backend
+npm init -y
+
+# Instalar dependencias
+npm install express mongoose bcryptjs jsonwebtoken cors dotenv
+npm install -D nodemon
+
+# Crear archivo .env
+cat > .env << EOL
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/music_tracks_db
+JWT_SECRET=tu_clave_secreta_super_segura_cambiar_en_produccion
+NODE_ENV=development
+EOL
+```
+
+### 3. Configurar Frontend
+
+```bash
+# En la raíz del proyecto
+npm install
+
+# Actualizar .env con la URL del backend local
+echo "VITE_API_URL=http://localhost:3000/api" >> .env
+```
+
+### 4. Ejecutar el Proyecto
+
+```bash
+# Terminal 1 - Backend
+cd backend
+npm run dev
+
+# Terminal 2 - Frontend
+npm run dev
+```
+
+## 📊 Datos de Ejemplo para MongoDB
+
+```javascript
+// En mongosh:
+use music_tracks_db
+
+db.tracks.insertMany([
+  {
+    name: "Blinding Lights",
+    artist_name: "The Weeknd",
+    album_name: "After Hours",
+    genre: "Pop",
+    release_year: 2020,
+    duration_ms: 200040,
+    energy: 0.73,
+    danceability: 0.51,
+    valence: 0.37,
+    tempo: 171,
+    popularity: 95,
+    created_at: new Date(),
+    updated_at: new Date()
+  },
+  {
+    name: "Shape of You",
+    artist_name: "Ed Sheeran",
+    album_name: "÷ (Divide)",
+    genre: "Pop",
+    release_year: 2017,
+    duration_ms: 233713,
+    energy: 0.65,
+    danceability: 0.83,
+    valence: 0.93,
+    tempo: 96,
+    popularity: 92,
+    created_at: new Date(),
+    updated_at: new Date()
+  },
+  {
+    name: "Bohemian Rhapsody",
+    artist_name: "Queen",
+    album_name: "A Night at the Opera",
+    genre: "Rock",
+    release_year: 1975,
+    duration_ms: 354320,
+    energy: 0.38,
+    danceability: 0.29,
+    valence: 0.35,
+    tempo: 72,
+    popularity: 90,
+    created_at: new Date(),
+    updated_at: new Date()
+  }
+  // ... más pistas
+])
+```
+
+## 🔐 Crear Usuario Administrador
+
+```javascript
+// En mongosh:
+use music_tracks_db
+
+// Crear usuario admin (el hash es para "admin123")
+db.users.insertOne({
+  email: "admin@musicexplorer.com",
+  password: "$2a$10$8K1p/a0dL3LJ9M1l1fGF9u0bZ3Y0uJ0gE3gJ3gJ3gJ3gJ3gJ3gJ3g",
+  role: "admin",
+  created_at: new Date(),
+  updated_at: new Date()
 })
 ```
 
-#### 2. **Agregación por Género (Framework de Agregación)**
-```typescript
-// Función PostgreSQL que simula pipeline de agregación MongoDB
-const { data, error } = await supabase.rpc("get_genre_stats");
+## 🔍 Consultas MongoDB (Equivalentes a las SQL)
+
+### 1. Búsqueda Compleja con Filtros
+
+```javascript
+// Búsqueda de texto + filtros numéricos
+db.tracks.find({
+  $text: { $search: "blinding weekend" },
+  energy: { $gte: 0.5, $lte: 0.9 },
+  danceability: { $gte: 0.3, $lte: 0.8 },
+  popularity: { $gte: 70, $lte: 100 }
+})
 ```
 
-**Definición de la función:**
-```sql
-CREATE FUNCTION get_genre_stats()
-RETURNS TABLE(
-  genre text,
-  avg_tempo numeric,
-  avg_energy numeric,
-  avg_popularity numeric,
-  count bigint
-) AS $$
-  SELECT 
-    genre,
-    ROUND(AVG(tempo)::numeric, 2) as avg_tempo,
-    ROUND(AVG(energy)::numeric, 2) as avg_energy,
-    ROUND(AVG(popularity)::numeric, 2) as avg_popularity,
-    COUNT(*) as count
-  FROM tracks
-  GROUP BY genre
-  ORDER BY count DESC, avg_popularity DESC;
-$$ LANGUAGE sql STABLE;
-```
+### 2. Estadísticas por Género (Agregación)
 
-**Equivalente MongoDB:**
 ```javascript
 db.tracks.aggregate([
   {
     $group: {
       _id: "$genre",
-      avg_tempo: { $avg: "$tempo" },
       avg_energy: { $avg: "$energy" },
+      avg_danceability: { $avg: "$danceability" },
+      avg_valence: { $avg: "$valence" },
+      avg_tempo: { $avg: "$tempo" },
       avg_popularity: { $avg: "$popularity" },
-      count: { $sum: 1 }
+      track_count: { $sum: 1 }
     }
   },
   {
-    $sort: { count: -1, avg_popularity: -1 }
+    $sort: { track_count: -1 }
   }
 ])
 ```
 
-#### 3. **CRUD Operaciones (Admin)**
+### 3. Top 10 Pistas Más Populares
 
-**CREATE:**
-```typescript
-const { error } = await supabase.from("tracks").insert([trackData]);
+```javascript
+db.tracks.find()
+  .sort({ popularity: -1 })
+  .limit(10)
 ```
 
-**UPDATE:**
-```typescript
-const { error } = await supabase
-  .from("tracks")
-  .update(trackData)
-  .eq("id", trackId);
+### 4. CRUD de Administrador
+
+```javascript
+// CREATE
+db.tracks.insertOne({ ...trackData })
+
+// READ
+db.tracks.findOne({ _id: ObjectId("...") })
+
+// UPDATE
+db.tracks.updateOne(
+  { _id: ObjectId("...") },
+  { $set: { ...updatedFields, updated_at: new Date() } }
+)
+
+// DELETE
+db.tracks.deleteOne({ _id: ObjectId("...") })
 ```
-
-**DELETE:**
-```typescript
-const { error } = await supabase
-  .from("tracks")
-  .delete()
-  .eq("id", trackId);
-```
-
----
-
-## 🔐 Variables de Entorno
-
-El archivo `.env` contiene las credenciales de Supabase (generado automáticamente):
-
-```env
-# Supabase Configuration
-VITE_SUPABASE_URL=https://[PROJECT_ID].supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=[ANON_KEY]
-VITE_SUPABASE_PROJECT_ID=[PROJECT_ID]
-```
-
-⚠️ **IMPORTANTE:** Este archivo NO debe editarse manualmente. Se actualiza automáticamente por la integración de Lovable Cloud.
-
----
-
-## 🚀 Instalación y Ejecución
-
-### Prerequisitos
-- Node.js 18+ y npm
-- Cuenta de Lovable (para backend)
-
-### Pasos de Instalación
-
-```bash
-# 1. Clonar el repositorio
-git clone <URL_DEL_REPOSITORIO>
-cd spotify-explorer
-
-# 2. Instalar dependencias
-npm install
-
-# 3. Ejecutar en modo desarrollo
-npm run dev
-```
-
-La aplicación estará disponible en: `http://localhost:5173`
-
-### Compilar para Producción
-
-```bash
-npm run build
-```
-
----
-
-## 👤 Crear Usuario Administrador
-
-Para acceder al panel de administración, debes asignar el rol de admin a un usuario:
-
-1. **Registrar un usuario** desde `/auth`
-2. **Obtener el ID del usuario** desde Lovable Cloud > Backend > Profiles
-3. **Ejecutar esta query** en Lovable Cloud > Backend > SQL Editor:
-
-```sql
-INSERT INTO user_roles (user_id, role)
-VALUES ('[USER_ID_AQUI]', 'admin');
-```
-
-4. Cerrar sesión y volver a iniciar sesión
-5. El menú "Admin" ahora será visible
-
----
-
-## 📊 Patrones de Diseño Similares a MongoDB
-
-Aunque este proyecto usa PostgreSQL, implementa patrones que simulan operaciones MongoDB:
-
-| Operación MongoDB | Implementación PostgreSQL | Ubicación |
-|-------------------|---------------------------|-----------|
-| `$text` search | `ILIKE` con OR | `TrackSearchList.tsx`, `Explore.tsx` |
-| `$gte`, `$lte` | `.gte()`, `.lte()` | Filtros de rango |
-| `$group` + `$avg` | `GROUP BY` + `AVG()` | Función `get_genre_stats()` |
-| `$sort` | `.order()` / `ORDER BY` | Todas las queries |
-| `$or` | `.or()` | Búsqueda de texto |
-
----
 
 ## 🎨 Diseño y Colores
 
-El proyecto usa una paleta inspirada en el logo:
-- **Verde brillante** (#00ff00): Elementos principales y acentos
-- **Azul oscuro** (hsl(200, 50%, 5%)): Fondos
-- **Azul intermedio**: Tarjetas y componentes secundarios
+El diseño está inspirado en el logo del proyecto con la siguiente paleta:
 
-Colores definidos en `src/index.css` usando tokens CSS:
-```css
---primary: 120 100% 50%;     /* Verde brillante */
---background: 200 50% 5%;    /* Azul oscuro */
---accent: 120 100% 45%;      /* Verde acento */
-```
+### Modo Claro (por defecto)
+- **Verde Brillante (#00FF00)**: Color primario, botones, acentos
+- **Blanco (#FAFAFA)**: Fondo principal
+- **Azul Claro (#E8F4F8)**: Fondos secundarios, tarjetas
+- **Azul Oscuro (#0A3D4D)**: Textos, gráficos
+- **Gris Claro**: Bordes y elementos secundarios
 
----
+### Modo Oscuro
+- **Verde Brillante**: Mantiene su intensidad
+- **Azul Oscuro (#0F2830)**: Fondo principal
+- **Azul Intermedio**: Tarjetas y componentes
 
-## 📚 Tecnologías Utilizadas
+## 🛠️ Tecnologías Utilizadas
 
 ### Frontend
-- **React 18** - Framework UI
-- **TypeScript** - Tipado estático
-- **Tailwind CSS** - Estilos
-- **shadcn/ui** - Componentes UI
-- **TanStack Query** - Gestión de estado asíncrono
-- **React Router** - Navegación
-- **Zod** - Validación de schemas
-- **Recharts** - Gráficos
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router DOM
+- Recharts (gráficos)
+- Zod (validación)
+- React Hook Form
 
-### Backend (Lovable Cloud)
-- **Supabase** - Base de datos PostgreSQL
-- **Supabase Auth** - Autenticación JWT
-- **Row Level Security (RLS)** - Seguridad a nivel de fila
+### Backend (a implementar)
+- Node.js + Express
+- MongoDB + Mongoose
+- JWT para autenticación
+- bcryptjs para hashing
+- CORS para seguridad
 
-### Desarrollo
-- **Vite** - Build tool
-- **ESLint** - Linting
+## 📝 Variables de Entorno
 
----
-
-## 📝 Documentación de Consultas
-
-### Consulta 1: Búsqueda Compleja Multi-Campo
-**Propósito:** Buscar canciones por texto y múltiples rangos numéricos  
-**Archivo:** `src/components/TrackSearchList.tsx`, `src/pages/Explore.tsx`  
-**Parámetros:**
-- `searchQuery` (string): Texto a buscar en nombre o artista
-- `minEnergy`, `maxEnergy` (number): Rango de energía 0-1
-- `minDanceability`, `maxDanceability` (number): Rango de bailabilidad 0-1
-- `minPopularity`, `maxPopularity` (number): Rango de popularidad 0-100
-
-**Uso:**
-```typescript
-// Buscar canciones con "love" en el título, energía alta y popularidad media
-searchQuery = "love"
-minEnergy = 0.8, maxEnergy = 1.0
-minPopularity = 50, maxPopularity = 100
+### Frontend (.env)
+```bash
+VITE_API_URL=http://localhost:3000/api
 ```
 
-### Consulta 2: Agregación de Estadísticas por Género
-**Propósito:** Calcular promedios y conteos agrupados por género  
-**Archivo:** `src/pages/Dashboard.tsx`  
-**Función:** `get_genre_stats()`  
-**Retorna:**
-- `genre`: Género musical
-- `avg_tempo`: Promedio de BPM
-- `avg_energy`: Promedio de energía
-- `avg_popularity`: Promedio de popularidad
-- `count`: Número de canciones
-
-**Uso:**
-```typescript
-const { data: genreStats } = await supabase.rpc("get_genre_stats");
+### Backend (.env)
+```bash
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/music_tracks_db
+JWT_SECRET=tu_clave_secreta_aqui
+NODE_ENV=development
 ```
-
-### Consulta 3: Top 10 Canciones Populares
-**Propósito:** Obtener las 10 canciones más populares  
-**Archivo:** `src/pages/Dashboard.tsx`  
-**Query:**
-```typescript
-const { data } = await supabase
-  .from("tracks")
-  .select("*")
-  .order("popularity", { ascending: false })
-  .limit(10);
-```
-
-### Consulta 4: CRUD Operaciones (Admin)
-**Archivo:** `src/pages/Admin.tsx`
-
-**CREATE:** Validación con Zod + inserción
-```typescript
-const validation = trackSchema.safeParse(data);
-await supabase.from("tracks").insert([data]);
-```
-
-**UPDATE:** Búsqueda + actualización
-```typescript
-await supabase.from("tracks").update(data).eq("id", trackId);
-```
-
-**DELETE:** Confirmación + eliminación
-```typescript
-await supabase.from("tracks").delete().eq("id", trackId);
-```
-
----
 
 ## 🔒 Seguridad Implementada
 
-1. **Autenticación JWT**: Tokens seguros via Supabase Auth
-2. **RLS Policies**: Restricciones a nivel de base de datos
-3. **Validación Client-Side**: Schemas Zod para formularios
-4. **Validación Server-Side**: Constraints y tipos en PostgreSQL
-5. **Roles Separados**: Tabla `user_roles` independiente (prevención de escalada de privilegios)
-6. **Security Definer Functions**: Funciones con privilegios elevados para verificaciones seguras
+- ✅ Autenticación JWT
+- ✅ Hashing de contraseñas con bcrypt
+- ✅ Validación de entrada con Zod
+- ✅ Roles de usuario (user/admin)
+- ✅ Protección de rutas en frontend
+- ✅ CORS configurado
+- ✅ Variables de entorno para secretos
+
+## 📚 Documentación Adicional
+
+- [React Documentation](https://react.dev/)
+- [MongoDB Documentation](https://docs.mongodb.com/)
+- [Mongoose Guide](https://mongoosejs.com/docs/guide.html)
+- [JWT Authentication](https://jwt.io/introduction)
+- [Express.js Guide](https://expressjs.com/)
+
+## 🤝 Contribuir
+
+Este es un proyecto educativo. Para contribuir:
+
+1. Fork el proyecto
+2. Crea una rama con tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## ✅ Checklist de Requisitos del Proyecto
+
+- [x] Búsqueda compleja con múltiples filtros
+- [x] Agregación de datos por género
+- [x] Sistema CRUD completo para admin
+- [x] Autenticación con JWT
+- [x] Roles de usuario
+- [x] API RESTful documentada
+- [x] Interfaz responsiva
+- [x] Dashboard con visualizaciones
+- [x] Validación de formularios
+- [x] Estructura NoSQL (MongoDB)
+- [x] Documentación completa
+
+## 📄 Licencia
+
+Este proyecto es de código abierto bajo la licencia MIT.
 
 ---
 
-## 📖 Referencias y Documentación
-
-- **Supabase Docs:** https://supabase.com/docs
-- **React Query:** https://tanstack.com/query/latest
-- **shadcn/ui:** https://ui.shadcn.com
-- **Tailwind CSS:** https://tailwindcss.com
-- **Zod Validation:** https://zod.dev
-
----
-
-## 👨‍💻 Desarrollo y Contribución
-
-### Estructura del Proyecto
-```
-src/
-├── assets/              # Imágenes y assets estáticos
-├── components/          # Componentes reutilizables
-│   ├── ui/             # Componentes UI (shadcn)
-│   ├── Navbar.tsx      # Barra de navegación
-│   └── TrackSearchList.tsx  # Lista de búsqueda de pistas
-├── contexts/           # React Contexts
-│   └── AuthContext.tsx # Gestión de autenticación
-├── integrations/       # Integraciones externas
-│   └── supabase/       # Cliente y tipos de Supabase
-├── lib/                # Utilidades
-├── pages/              # Páginas de la aplicación
-│   ├── Index.tsx       # Página de inicio
-│   ├── Auth.tsx        # Login/Registro
-│   ├── Explore.tsx     # Búsqueda pública
-│   ├── Dashboard.tsx   # Estadísticas
-│   └── Admin.tsx       # Panel CRUD
-└── main.tsx            # Entrada de la aplicación
-```
-
-### Scripts Disponibles
-```json
-{
-  "dev": "Servidor de desarrollo",
-  "build": "Compilar para producción",
-  "preview": "Vista previa de producción",
-  "lint": "Ejecutar ESLint"
-}
-```
-
----
-
-## 📦 Entrega del Proyecto
-
-**Formato:** ZIP  
-**Nombre:** `EFMAI_APELLIDO1_APELLIDO2_NOMBRE`
-
-**Contenido del ZIP:**
-1. Código fuente completo
-2. Este README.md con documentación
-3. Archivo de migraciones SQL (en `supabase/migrations/`)
-4. Capturas de pantalla de la aplicación funcionando
-
----
-
-## ✅ Checklist de Requisitos del Ejercicio
-
-- ✅ Base de datos creada y documentada (PostgreSQL/Supabase)
-- ✅ Índices creados para optimización
-- ✅ Interfaz de interacción (SPA React + TypeScript)
-- ✅ Búsqueda y filtrado complejo (varios campos simultáneos)
-- ✅ Framework de agregación (función `get_genre_stats`)
-- ✅ Operaciones de escritura (CRUD completo en Admin)
-- ✅ Autenticación y autorización implementadas
-- ✅ Documentación de consultas y estructura
-- ✅ Sistema de roles para seguridad
-
----
-
-## 📧 Soporte
-
-Para preguntas o problemas técnicos, contactar al desarrollador o revisar la documentación de Lovable: https://docs.lovable.dev
-
----
-
-**Última actualización:** Noviembre 2024  
-**Versión:** 1.0.0
+**Nota**: Este README proporciona la estructura completa para migrar el proyecto de Lovable Cloud (PostgreSQL) a un entorno local con MongoDB. Deberás implementar el backend en Node.js/Express siguiendo las rutas y modelos especificados.

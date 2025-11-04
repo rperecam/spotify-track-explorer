@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Music, Search, BarChart3, Shield, ArrowRight } from "lucide-react";
+import { Search, BarChart3, Shield, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import logo from "@/assets/logo.png";
 
 const Index = () => {
   const { user } = useAuth();
@@ -10,12 +11,12 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="inline-block p-4 rounded-2xl bg-primary/10 mb-4">
-            <Music className="h-16 w-16 text-primary" />
+          <div className="inline-block mb-4">
+            <img src={logo} alt="Music Tracks Explorer Logo" className="h-24 w-24 md:h-32 md:w-32" />
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-tight">
-            Spotify Tracks Explorer
+            Music Tracks Explorer
           </h1>
 
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
@@ -72,19 +73,6 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="pt-16 space-y-4">
-            <h2 className="text-2xl font-semibold">Tecnologías</h2>
-            <div className="flex flex-wrap gap-3 justify-center">
-              {["React", "TypeScript", "PostgreSQL", "Lovable Cloud", "API RESTful", "JWT Auth"].map((tech) => (
-                <span
-                  key={tech}
-                  className="px-4 py-2 rounded-full bg-secondary text-sm font-medium"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
