@@ -1,7 +1,8 @@
-import { Music, Search, BarChart3, Shield, LogOut } from "lucide-react";
+import { Search, BarChart3, Shield, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import logo from "@/assets/logo.webp";
 
 export const Navbar = () => {
   const location = useLocation();
@@ -13,10 +14,12 @@ export const Navbar = () => {
     <nav className="border-b border-border bg-card/50 backdrop-blur-lg sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-              <Music className="h-6 w-6 text-primary" />
-            </div>
+          <Link to="/" className="flex items-center gap-3 group">
+            <img 
+              src={logo} 
+              alt="Spotify Explorer" 
+              className="h-10 w-10 transition-transform group-hover:scale-110" 
+            />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Spotify Explorer
             </span>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Plus, Edit2, Trash2 } from "lucide-react";
+import { Shield, Plus, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { TrackSearchList } from "@/components/TrackSearchList";
 
 const trackSchema = z.object({
   name: z.string().min(1, "Nombre requerido").max(200, "Nombre muy largo"),
@@ -64,19 +65,6 @@ const Admin = () => {
     return null;
   }
 
-  const { data: tracks, isLoading } = useQuery({
-    queryKey: ["admin-tracks"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tracks")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const createMutation = useMutation({
     mutationFn: async (data: TrackForm) => {
       const validation = trackSchema.safeParse(data);
@@ -88,7 +76,7 @@ const Admin = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-tracks"] });
+      queryClient.invalidateQueries({ queryKey: ["search-tracks"] });
       toast.success("Pista creada exitosamente");
       resetForm();
     },
@@ -108,7 +96,7 @@ const Admin = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-tracks"] });
+      queryClient.invalidateQueries({ queryKey: ["search-tracks"] });
       toast.success("Pista actualizada exitosamente");
       resetForm();
     },
@@ -123,7 +111,7 @@ const Admin = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-tracks"] });
+      queryClient.invalidateQueries({ queryKey: ["search-tracks"] });
       toast.success("Pista eliminada exitosamente");
     },
     onError: (error: Error) => {
@@ -158,10 +146,25 @@ const Admin = () => {
   };
 
   const handleEdit = (track: any) => {
-    setFormData(track);
+    setFormData({
+      name: track.name,
+      artist_name: track.artist_name,
+      year: track.year,
+      genre: track.genre,
+      popularity: track.popularity,
+      energy: track.energy,
+      danceability: track.danceability,
+      tempo: track.tempo,
+      duration_ms: track.duration_ms,
+      valence: track.valence,
+    });
     setIsEditing(true);
     setEditingId(track.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id);
   };
 
   return (
@@ -335,44 +338,10 @@ const Admin = () => {
 
         <Card className="shadow-[var(--shadow-card)]">
           <CardHeader>
-            <CardTitle>Lista de Pistas</CardTitle>
+            <CardTitle>Buscar y Gestionar Pistas</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <p className="text-muted-foreground">Cargando...</p>
-            ) : (
-              <div className="space-y-2">
-                {tracks?.map((track) => (
-                  <div
-                    key={track.id}
-                    className="flex items-center justify-between p-4 bg-secondary rounded-lg"
-                  >
-                    <div>
-                      <p className="font-semibold">{track.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {track.artist_name} • {track.year} • {track.genre}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(track)}>
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          if (confirm("¿Eliminar esta pista?")) {
-                            deleteMutation.mutate(track.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <TrackSearchList onEdit={handleEdit} onDelete={handleDelete} />
           </CardContent>
         </Card>
       </main>
