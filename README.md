@@ -111,7 +111,7 @@ db.users.createIndex({ email: 1 }, { unique: true })
 
 ### Pistas (Tracks)
 - `GET /api/tracks` - Obtener todas las pistas con filtros opcionales
-  - Query params: `search`, `energyMin`, `energyMax`, `danceabilityMin`, `danceabilityMax`, `popularityMin`, `popularityMax`
+  - Query params: `search`, `energy_min`, `energy_max`, `danceability_min`, `danceability_max`, `popularity_min`, `popularity_max`
 - `GET /api/tracks/:id` - Obtener una pista por ID
 - `POST /api/tracks` - Crear pista (solo admin)
 - `PUT /api/tracks/:id` - Actualizar pista (solo admin)
@@ -120,6 +120,8 @@ db.users.createIndex({ email: 1 }, { unique: true })
 ### Dashboard
 - `GET /api/dashboard/genre-stats` - Estadísticas agregadas por género
 - `GET /api/dashboard/top-popular` - Top 10 pistas más populares
+
+**📁 Implementación Completa**: El backend está completamente implementado en el directorio `/backend`. Ver `backend/README.md` para instrucciones detalladas de instalación, configuración y uso.
 
 ## 🚀 Instalación y Configuración Local
 
@@ -318,19 +320,23 @@ db.tracks.deleteOne({ _id: ObjectId("...") })
 
 ## 🎨 Diseño y Colores
 
-El diseño está inspirado en el logo del proyecto con la siguiente paleta:
+La aplicación usa una paleta de colores oscura inspirada en el logo (amarillo/dorado + negro):
 
-### Modo Claro (por defecto)
-- **Verde Brillante (#00FF00)**: Color primario, botones, acentos
-- **Blanco (#FAFAFA)**: Fondo principal
-- **Azul Claro (#E8F4F8)**: Fondos secundarios, tarjetas
-- **Azul Oscuro (#0A3D4D)**: Textos, gráficos
-- **Gris Claro**: Bordes y elementos secundarios
+### Paleta Principal (Tema Oscuro)
+- **Background**: `#141414` (casi negro) - Fondo principal
+- **Foreground**: `#EBEBEB` (gris claro) - Texto principal con alto contraste
+- **Primary**: `#FFC107` (amarillo/dorado) - Color principal del logo, botones y acentos
+- **Card Background**: `#1E1E1E` (gris muy oscuro) - Fondo de tarjetas y componentes
+- **Secondary**: `#2E2E2E` (gris oscuro) - Fondos secundarios
+- **Border**: `#383838` (gris medio oscuro) - Bordes y separadores
+- **Accent**: `#FFD54F` (amarillo claro) - Efectos hover e interactivos
+- **Destructive**: `#F44336` (rojo) - Alertas y errores
 
-### Modo Oscuro
-- **Verde Brillante**: Mantiene su intensidad
-- **Azul Oscuro (#0F2830)**: Fondo principal
-- **Azul Intermedio**: Tarjetas y componentes
+### Características de Diseño
+- **Alto Contraste**: Textos claros (#EBEBEB) sobre fondos oscuros para facilitar la lectura
+- **Acentos Vibrantes**: Amarillo dorado para elementos interactivos y llamadas a la acción
+- **Sombras con Resplandor**: Efectos sutiles de glow amarillo para profundidad y modernidad
+- **Diseño Responsivo**: Adaptable a todos los tamaños de pantalla
 
 ## 🛠️ Tecnologías Utilizadas
 
