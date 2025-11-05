@@ -8,79 +8,79 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 200 90% 15%;
+    --background: 0 0% 95%;
+    --foreground: 0 0% 90%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 200 90% 15%;
+    --card: 210 33% 17%;
+    --card-foreground: 0 0% 90%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 200 90% 15%;
+    --popover: 210 33% 17%;
+    --popover-foreground: 0 0% 90%;
 
-    --primary: 120 100% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 157 100% 50%;
+    --primary-foreground: 210 65% 11%;
 
-    --secondary: 200 80% 92%;
-    --secondary-foreground: 200 90% 15%;
+    --secondary: 210 33% 17%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 200 40% 95%;
-    --muted-foreground: 200 30% 40%;
+    --muted: 210 33% 20%;
+    --muted-foreground: 0 0% 70%;
 
-    --accent: 120 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 163 100% 54%;
+    --accent-foreground: 210 65% 11%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 100% 65%;
+    --destructive-foreground: 0 0% 90%;
 
-    --border: 200 40% 85%;
-    --input: 200 40% 85%;
-    --ring: 120 100% 45%;
+    --border: 210 33% 25%;
+    --input: 210 33% 25%;
+    --ring: 157 100% 50%;
 
     --radius: 0.75rem;
 
-    /* Logo-inspired colors (bright green + light blue) */
-    --logo-green: 120 100% 45%;
-    --logo-green-bright: 120 100% 50%;
-    --logo-blue-light: 200 80% 92%;
-    --logo-blue-accent: 200 90% 15%;
+    /* Logo-inspired colors (neon green + dark blue) */
+    --logo-green: 157 100% 50%;
+    --logo-green-hover: 163 100% 54%;
+    --logo-blue-dark: 210 65% 11%;
+    --logo-blue-medium: 210 33% 17%;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(120 100% 45%) 0%, hsl(120 100% 55%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(200 80% 98%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(157 100% 50%) 0%, hsl(163 100% 54%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(210 33% 17%) 0%, hsl(210 33% 20%) 100%);
     
     /* Shadows */
-    --shadow-glow: 0 0 30px hsl(120 100% 45% / 0.2);
-    --shadow-card: 0 8px 24px hsl(120 100% 45% / 0.08);
+    --shadow-glow: 0 0 30px hsl(157 100% 50% / 0.3);
+    --shadow-card: 0 8px 24px hsl(157 100% 50% / 0.1);
   }
 
   .dark {
-    --background: 200 90% 10%;
-    --foreground: 0 0% 98%;
+    --background: 210 65% 11%;
+    --foreground: 0 0% 90%;
 
-    --card: 200 70% 15%;
-    --card-foreground: 0 0% 98%;
+    --card: 210 33% 17%;
+    --card-foreground: 0 0% 90%;
 
-    --popover: 200 70% 15%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 210 33% 17%;
+    --popover-foreground: 0 0% 90%;
 
-    --primary: 120 100% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 157 100% 50%;
+    --primary-foreground: 210 65% 11%;
 
-    --secondary: 200 60% 25%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 210 33% 17%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 200 50% 30%;
-    --muted-foreground: 0 0% 75%;
+    --muted: 210 33% 20%;
+    --muted-foreground: 0 0% 70%;
 
-    --accent: 120 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 163 100% 54%;
+    --accent-foreground: 210 65% 11%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 100% 65%;
+    --destructive-foreground: 0 0% 90%;
 
-    --border: 200 50% 30%;
-    --input: 200 50% 30%;
-    --ring: 120 100% 45%;
+    --border: 210 33% 25%;
+    --input: 210 33% 25%;
+    --ring: 157 100% 50%;
   }
 }
 
