@@ -1,3 +1,8 @@
+// ============================================================================
+// Página: Autenticación
+// Descripción: Login y registro de usuarios con validación Zod
+// ============================================================================
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,36 +14,42 @@ import { toast } from "sonner";
 import { Music } from "lucide-react";
 import { z } from "zod";
 
+// Schema de validación para login
 const loginSchema = z.object({
   email: z.string().email("Email inválido").max(255, "Email demasiado largo"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
 });
 
+// Schema de validación para registro (extiende login)
 const registerSchema = loginSchema.extend({
   username: z.string().min(3, "El username debe tener al menos 3 caracteres").max(50, "Username demasiado largo"),
 });
 
 const Auth = () => {
+  // Estado: Controlar si estamos en modo login o registro
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  // Redirigir si el usuario ya ha iniciado sesión
   if (user) {
     navigate("/explore");
     return null;
   }
 
+  // Handler: Procesar formulario de login o registro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       if (isLogin) {
+        // Validar datos de login
         const validation = loginSchema.safeParse({ email, password });
         if (!validation.success) {
           toast.error(validation.error.errors[0].message);
@@ -46,6 +57,7 @@ const Auth = () => {
           return;
         }
 
+        // Intentar login
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
@@ -58,6 +70,7 @@ const Auth = () => {
           navigate("/explore");
         }
       } else {
+        // Validar datos de registro
         const validation = registerSchema.safeParse({ email, password, username });
         if (!validation.success) {
           toast.error(validation.error.errors[0].message);
@@ -65,6 +78,7 @@ const Auth = () => {
           return;
         }
 
+        // Intentar registro
         const { error } = await signUp(email, password, username);
         if (error) {
           if (error.message.includes("already registered")) {

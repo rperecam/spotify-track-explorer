@@ -1,3 +1,8 @@
+// ============================================================================
+// Componente: Panel de Administración
+// Descripción: Gestión CRUD de pistas musicales (acceso solo para administradores)
+// ============================================================================
+
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,7 +64,7 @@ const Admin = () => {
     valence: 0.5,
   });
 
-  // Redirect if not admin
+  // Redirigir si el usuario no es administrador
   if (!authLoading && !isAdmin) {
     navigate("/explore");
     return null;
@@ -194,8 +199,9 @@ const Admin = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
+                {/* Campo: Nombre de la pista */}
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nombre *</Label>
+                  <Label htmlFor="name">Nombre</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -205,8 +211,9 @@ const Admin = () => {
                   />
                 </div>
 
+                {/* Campo: Nombre del artista */}
                 <div className="space-y-2">
-                  <Label htmlFor="artist_name">Artista *</Label>
+                  <Label htmlFor="artist_name">Artista</Label>
                   <Input
                     id="artist_name"
                     value={formData.artist_name}
@@ -216,8 +223,9 @@ const Admin = () => {
                   />
                 </div>
 
+                {/* Campo: Año de lanzamiento */}
                 <div className="space-y-2">
-                  <Label htmlFor="year">Año *</Label>
+                  <Label htmlFor="year">Año</Label>
                   <Input
                     id="year"
                     type="number"
@@ -229,8 +237,9 @@ const Admin = () => {
                   />
                 </div>
 
+                {/* Campo: Género musical */}
                 <div className="space-y-2">
-                  <Label htmlFor="genre">Género *</Label>
+                  <Label htmlFor="genre">Género</Label>
                   <Input
                     id="genre"
                     value={formData.genre}
@@ -240,8 +249,9 @@ const Admin = () => {
                   />
                 </div>
 
+                {/* Campo: Popularidad (0-100) */}
                 <div className="space-y-2">
-                  <Label htmlFor="popularity">Popularidad (0-100) *</Label>
+                  <Label htmlFor="popularity">Popularidad (0-100)</Label>
                   <Input
                     id="popularity"
                     type="number"
@@ -253,8 +263,9 @@ const Admin = () => {
                   />
                 </div>
 
+                {/* Campo: Energía (0-1) */}
                 <div className="space-y-2">
-                  <Label htmlFor="energy">Energía (0-1) *</Label>
+                  <Label htmlFor="energy">Energía (0-1)</Label>
                   <Input
                     id="energy"
                     type="number"
@@ -267,8 +278,9 @@ const Admin = () => {
                   />
                 </div>
 
+                {/* Campo: Bailabilidad (0-1) */}
                 <div className="space-y-2">
-                  <Label htmlFor="danceability">Bailabilidad (0-1) *</Label>
+                  <Label htmlFor="danceability">Bailabilidad (0-1)</Label>
                   <Input
                     id="danceability"
                     type="number"
@@ -281,8 +293,9 @@ const Admin = () => {
                   />
                 </div>
 
+                {/* Campo: Tempo en BPM */}
                 <div className="space-y-2">
-                  <Label htmlFor="tempo">Tempo (BPM) *</Label>
+                  <Label htmlFor="tempo">Tempo (BPM)</Label>
                   <Input
                     id="tempo"
                     type="number"
@@ -295,8 +308,9 @@ const Admin = () => {
                   />
                 </div>
 
+                {/* Campo: Duración en milisegundos */}
                 <div className="space-y-2">
-                  <Label htmlFor="duration_ms">Duración (ms) *</Label>
+                  <Label htmlFor="duration_ms">Duración (ms)</Label>
                   <Input
                     id="duration_ms"
                     type="number"
@@ -307,8 +321,9 @@ const Admin = () => {
                   />
                 </div>
 
+                {/* Campo: Valencia emocional (0-1) */}
                 <div className="space-y-2">
-                  <Label htmlFor="valence">Valencia (0-1) *</Label>
+                  <Label htmlFor="valence">Valencia (0-1)</Label>
                   <Input
                     id="valence"
                     type="number"

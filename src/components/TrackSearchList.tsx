@@ -1,11 +1,16 @@
+// ============================================================================
+// Componente: Lista de Búsqueda de Pistas
+// Descripción: Permite buscar y filtrar pistas con opciones avanzadas
+// ============================================================================
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Search, Edit2, Trash2 } from "lucide-react";
 
 interface Track {
@@ -28,7 +33,10 @@ interface TrackSearchListProps {
 }
 
 export const TrackSearchList = ({ onEdit, onDelete }: TrackSearchListProps) => {
+  // Estado: Query de búsqueda de texto
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Estado: Filtros numéricos para energía, bailabilidad y popularidad
   const [filters, setFilters] = useState({
     minEnergy: 0,
     maxEnergy: 1,
@@ -38,19 +46,20 @@ export const TrackSearchList = ({ onEdit, onDelete }: TrackSearchListProps) => {
     maxPopularity: 100,
   });
 
+  // Query: Obtener pistas filtradas desde Supabase
   const { data: tracks, isLoading } = useQuery({
     queryKey: ["search-tracks", searchQuery, filters],
     queryFn: async () => {
       let query = supabase.from("tracks").select("*");
 
-      // Text search (simulating MongoDB text search)
+      // Búsqueda de texto por nombre o artista
       if (searchQuery) {
         query = query.or(
           `name.ilike.%${searchQuery}%,artist_name.ilike.%${searchQuery}%`
         );
       }
 
-      // Numeric range filters
+      // Aplicar filtros numéricos de rango
       query = query
         .gte("energy", filters.minEnergy)
         .lte("energy", filters.maxEnergy)
@@ -66,6 +75,7 @@ export const TrackSearchList = ({ onEdit, onDelete }: TrackSearchListProps) => {
     },
   });
 
+  // Función: Formatear duración de milisegundos a minutos:segundos
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = ((ms % 60000) / 1000).toFixed(0);
@@ -91,8 +101,9 @@ export const TrackSearchList = ({ onEdit, onDelete }: TrackSearchListProps) => {
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
+              {/* Filtro de Energía: Muestra valores de 0-100 sin símbolo de porcentaje */}
               <div className="space-y-2">
-                <Label>Energía: {filters.minEnergy.toFixed(2)} - {filters.maxEnergy.toFixed(2)}</Label>
+                <Label>Energía ({Math.round(filters.minEnergy * 100)} - {Math.round(filters.maxEnergy * 100)})</Label>
                 <Slider
                   value={[filters.minEnergy * 100, filters.maxEnergy * 100]}
                   onValueChange={(values) =>
@@ -108,8 +119,9 @@ export const TrackSearchList = ({ onEdit, onDelete }: TrackSearchListProps) => {
                 />
               </div>
 
+              {/* Filtro de Bailabilidad: Muestra valores de 0-100 sin símbolo de porcentaje */}
               <div className="space-y-2">
-                <Label>Bailabilidad: {filters.minDanceability.toFixed(2)} - {filters.maxDanceability.toFixed(2)}</Label>
+                <Label>Bailabilidad ({Math.round(filters.minDanceability * 100)} - {Math.round(filters.maxDanceability * 100)})</Label>
                 <Slider
                   value={[filters.minDanceability * 100, filters.maxDanceability * 100]}
                   onValueChange={(values) =>
@@ -125,8 +137,9 @@ export const TrackSearchList = ({ onEdit, onDelete }: TrackSearchListProps) => {
                 />
               </div>
 
+              {/* Filtro de Popularidad: Muestra valores de 0-100 sin símbolo de porcentaje */}
               <div className="space-y-2">
-                <Label>Popularidad: {filters.minPopularity} - {filters.maxPopularity}</Label>
+                <Label>Popularidad ({filters.minPopularity} - {filters.maxPopularity})</Label>
                 <Slider
                   value={[filters.minPopularity, filters.maxPopularity]}
                   onValueChange={(values) =>

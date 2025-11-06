@@ -1,3 +1,8 @@
+// ============================================================================
+// Página: Explorador de Pistas
+// Descripción: Búsqueda avanzada de pistas musicales con filtros complejos
+// ============================================================================
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +40,7 @@ interface SearchFilters {
 }
 
 const Explore = () => {
+  // Estado: Filtros temporales (se aplican al hacer click en "Buscar")
   const [filters, setFilters] = useState<SearchFilters>({
     query: "",
     minEnergy: 0,
@@ -45,21 +51,23 @@ const Explore = () => {
     maxPopularity: 100,
   });
 
+  // Estado: Filtros activos aplicados a la query
   const [activeFilters, setActiveFilters] = useState<SearchFilters>(filters);
 
+  // Query: Buscar pistas con filtros activos
   const { data: tracks, isLoading } = useQuery({
     queryKey: ["tracks", activeFilters],
     queryFn: async () => {
       let query = supabase.from("tracks").select("*");
 
-      // Text search
+      // Aplicar búsqueda de texto
       if (activeFilters.query) {
         query = query.or(
           `name.ilike.%${activeFilters.query}%,artist_name.ilike.%${activeFilters.query}%`
         );
       }
 
-      // Numeric range filters
+      // Aplicar filtros numéricos de rango
       query = query
         .gte("energy", activeFilters.minEnergy / 100)
         .lte("energy", activeFilters.maxEnergy / 100)
@@ -81,10 +89,12 @@ const Explore = () => {
     },
   });
 
+  // Handler: Aplicar filtros a la búsqueda
   const handleSearch = () => {
     setActiveFilters(filters);
   };
 
+  // Función: Formatear duración de milisegundos a minutos:segundos
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
@@ -129,8 +139,9 @@ const Explore = () => {
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
+              {/* Filtro de Energía */}
               <div className="space-y-2">
-                <Label>Energía ({filters.minEnergy}% - {filters.maxEnergy}%)</Label>
+                <Label>Energía ({filters.minEnergy} - {filters.maxEnergy})</Label>
                 <Slider
                   min={0}
                   max={100}
@@ -143,8 +154,9 @@ const Explore = () => {
                 />
               </div>
 
+              {/* Filtro de Bailabilidad */}
               <div className="space-y-2">
-                <Label>Bailabilidad ({filters.minDanceability}% - {filters.maxDanceability}%)</Label>
+                <Label>Bailabilidad ({filters.minDanceability} - {filters.maxDanceability})</Label>
                 <Slider
                   min={0}
                   max={100}
@@ -157,6 +169,7 @@ const Explore = () => {
                 />
               </div>
 
+              {/* Filtro de Popularidad */}
               <div className="space-y-2">
                 <Label>Popularidad ({filters.minPopularity} - {filters.maxPopularity})</Label>
                 <Slider

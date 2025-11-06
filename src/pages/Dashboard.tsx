@@ -1,3 +1,8 @@
+// ============================================================================
+// Página: Dashboard Analítico
+// Descripción: Visualización de estadísticas agregadas y top pistas populares
+// ============================================================================
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
@@ -13,6 +18,7 @@ interface GenreStats {
 }
 
 const Dashboard = () => {
+  // Query: Obtener estadísticas agregadas por género
   const { data: stats, isLoading } = useQuery({
     queryKey: ["genre-stats"],
     queryFn: async () => {
@@ -23,6 +29,7 @@ const Dashboard = () => {
     },
   });
 
+  // Query: Obtener top 10 pistas más populares
   const { data: topTracks } = useQuery({
     queryKey: ["top-tracks"],
     queryFn: async () => {
