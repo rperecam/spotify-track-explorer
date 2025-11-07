@@ -21,27 +21,29 @@ import { TrackSearchList } from "@/components/TrackSearchList";
 const trackSchema = z.object({
   name: z.string().min(1, "Nombre requerido").max(200, "Nombre muy largo"),
   artist_name: z.string().min(1, "Artista requerido").max(200, "Nombre muy largo"),
-  year: z.number().int().min(1900).max(new Date().getFullYear()),
+  album_name: z.string().optional(),
   genre: z.string().min(1, "Género requerido").max(100, "Género muy largo"),
-  popularity: z.number().int().min(0).max(100),
-  energy: z.number().min(0).max(1),
-  danceability: z.number().min(0).max(1),
-  tempo: z.number().min(0).max(300),
+  explicit: z.boolean().optional(),
   duration_ms: z.number().int().min(0),
+  popularity: z.number().int().min(0).max(100),
+  danceability: z.number().min(0).max(1),
+  energy: z.number().min(0).max(1),
   valence: z.number().min(0).max(1),
+  tempo: z.number().min(0).max(300),
 });
 
 interface TrackForm {
   name: string;
   artist_name: string;
-  year: number;
+  album_name?: string;
   genre: string;
-  popularity: number;
-  energy: number;
-  danceability: number;
-  tempo: number;
+  explicit?: boolean;
   duration_ms: number;
+  popularity: number;
+  danceability: number;
+  energy: number;
   valence: number;
+  tempo: number;
 }
 
 const Admin = () => {
@@ -54,14 +56,15 @@ const Admin = () => {
   const [formData, setFormData] = useState<TrackForm>({
     name: "",
     artist_name: "",
-    year: new Date().getFullYear(),
+    album_name: "",
     genre: "",
-    popularity: 50,
-    energy: 0.5,
-    danceability: 0.5,
-    tempo: 120,
+    explicit: false,
     duration_ms: 180000,
+    popularity: 50,
+    danceability: 0.5,
+    energy: 0.5,
     valence: 0.5,
+    tempo: 120,
   });
 
   // Redirigir si el usuario no es administrador
@@ -128,14 +131,15 @@ const Admin = () => {
     setFormData({
       name: "",
       artist_name: "",
-      year: new Date().getFullYear(),
+      album_name: "",
       genre: "",
-      popularity: 50,
-      energy: 0.5,
-      danceability: 0.5,
-      tempo: 120,
+      explicit: false,
       duration_ms: 180000,
+      popularity: 50,
+      danceability: 0.5,
+      energy: 0.5,
       valence: 0.5,
+      tempo: 120,
     });
     setIsEditing(false);
     setEditingId(null);
@@ -154,14 +158,15 @@ const Admin = () => {
     setFormData({
       name: track.name,
       artist_name: track.artist_name,
-      year: track.year,
+      album_name: track.album_name || "",
       genre: track.genre,
-      popularity: track.popularity,
-      energy: track.energy,
-      danceability: track.danceability,
-      tempo: track.tempo,
+      explicit: track.explicit || false,
       duration_ms: track.duration_ms,
+      popularity: track.popularity,
+      danceability: track.danceability,
+      energy: track.energy,
       valence: track.valence,
+      tempo: track.tempo,
     });
     setIsEditing(true);
     setEditingId(track.id);
@@ -223,17 +228,14 @@ const Admin = () => {
                   />
                 </div>
 
-                {/* Campo: Año de lanzamiento */}
+                {/* Campo: Nombre del álbum */}
                 <div className="space-y-2">
-                  <Label htmlFor="year">Año</Label>
+                  <Label htmlFor="album_name">Álbum</Label>
                   <Input
-                    id="year"
-                    type="number"
-                    min="1900"
-                    max={new Date().getFullYear()}
-                    value={formData.year}
-                    onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                    required
+                    id="album_name"
+                    value={formData.album_name || ""}
+                    onChange={(e) => setFormData({ ...formData, album_name: e.target.value })}
+                    maxLength={200}
                   />
                 </div>
 
@@ -247,6 +249,18 @@ const Admin = () => {
                     required
                     maxLength={100}
                   />
+                </div>
+
+                {/* Campo: Contenido explícito */}
+                <div className="space-y-2 flex items-center gap-2 pt-8">
+                  <input
+                    id="explicit"
+                    type="checkbox"
+                    checked={formData.explicit || false}
+                    onChange={(e) => setFormData({ ...formData, explicit: e.target.checked })}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="explicit" className="cursor-pointer">Contenido explícito</Label>
                 </div>
 
                 {/* Campo: Popularidad (0-100) */}
