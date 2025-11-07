@@ -207,8 +207,6 @@ const Explore = () => {
                         <h3 className="text-xl font-semibold">{track.name}</h3>
                         <p className="text-muted-foreground">{track.artist_name}</p>
                         <div className="flex gap-4 text-sm text-muted-foreground mt-2">
-                          <span>{track.year}</span>
-                          <span>•</span>
                           <span>{track.genre}</span>
                           <span>•</span>
                           <span>{formatDuration(track.duration_ms)}</span>

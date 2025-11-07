@@ -173,7 +173,7 @@ export const TrackSearchList = ({ onEdit, onDelete }: TrackSearchListProps) => {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-lg truncate">{track.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {track.artist_name} • {track.year} • {track.genre}
+                      {track.artist_name} • {track.genre}
                     </p>
                     <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
                       <span>Popularidad: {track.popularity}</span>
