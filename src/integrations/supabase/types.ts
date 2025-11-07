@@ -34,11 +34,13 @@ export type Database = {
       }
       tracks: {
         Row: {
+          album_name: string | null
           artist_name: string
           created_at: string | null
           danceability: number
           duration_ms: number
           energy: number
+          explicit: boolean | null
           genre: string
           id: string
           name: string
@@ -49,11 +51,13 @@ export type Database = {
           year: number
         }
         Insert: {
+          album_name?: string | null
           artist_name: string
           created_at?: string | null
           danceability: number
           duration_ms: number
           energy: number
+          explicit?: boolean | null
           genre: string
           id?: string
           name: string
@@ -64,11 +68,13 @@ export type Database = {
           year: number
         }
         Update: {
+          album_name?: string | null
           artist_name?: string
           created_at?: string | null
           danceability?: number
           duration_ms?: number
           energy?: number
+          explicit?: boolean | null
           genre?: string
           id?: string
           name?: string
@@ -103,6 +109,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_artist_stats: {
+        Args: never
+        Returns: {
+          artist_name: string
+          avg_popularity: number
+          track_count: number
+        }[]
+      }
+      get_explicit_by_genre: {
+        Args: never
+        Returns: {
+          explicit_count: number
+          explicit_percentage: number
+          genre: string
+          total_count: number
+        }[]
+      }
       get_genre_stats: {
         Args: never
         Returns: {
