@@ -443,6 +443,11 @@ const Dashboard = () => {
                       backgroundColor: "hsl(0, 0%, 12%)",
                       border: "1px solid hsl(0, 0%, 25%)",
                       borderRadius: "8px",
+                    }}
+                    labelStyle={{
+                      color: "hsl(0, 0%, 100%)",
+                    }}
+                    itemStyle={{
                       color: "hsl(45, 100%, 51%)",
                     }}
                   />
@@ -481,6 +486,11 @@ const Dashboard = () => {
                       backgroundColor: "hsl(0, 0%, 12%)",
                       border: "1px solid hsl(0, 0%, 25%)",
                       borderRadius: "8px",
+                    }}
+                    labelStyle={{
+                      color: "hsl(0, 0%, 100%)",
+                    }}
+                    itemStyle={{
                       color: "hsl(45, 100%, 51%)",
                     }}
                   />
