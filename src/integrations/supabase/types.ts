@@ -48,7 +48,6 @@ export type Database = {
           tempo: number
           updated_at: string | null
           valence: number
-          year: number
         }
         Insert: {
           album_name?: string | null
@@ -65,7 +64,6 @@ export type Database = {
           tempo: number
           updated_at?: string | null
           valence: number
-          year: number
         }
         Update: {
           album_name?: string | null
@@ -82,7 +80,6 @@ export type Database = {
           tempo?: number
           updated_at?: string | null
           valence?: number
-          year?: number
         }
         Relationships: []
       }
