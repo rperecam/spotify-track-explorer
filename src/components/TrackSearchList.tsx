@@ -17,7 +17,6 @@ interface Track {
   id: string;
   name: string;
   artist_name: string;
-  year: number;
   genre: string;
   popularity: number;
   energy: number;

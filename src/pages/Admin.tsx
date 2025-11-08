@@ -17,6 +17,7 @@ import { Shield, Plus, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { TrackSearchList } from "@/components/TrackSearchList";
+import { Switch } from "@/components/ui/switch";
 
 const trackSchema = z.object({
   name: z.string().min(1, "Nombre requerido").max(200, "Nombre muy largo"),
@@ -252,15 +253,18 @@ const Admin = () => {
                 </div>
 
                 {/* Campo: Contenido explícito */}
-                <div className="space-y-2 flex items-center gap-2 pt-8">
-                  <input
-                    id="explicit"
-                    type="checkbox"
-                    checked={formData.explicit || false}
-                    onChange={(e) => setFormData({ ...formData, explicit: e.target.checked })}
-                    className="h-4 w-4"
-                  />
-                  <Label htmlFor="explicit" className="cursor-pointer">Contenido explícito</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="explicit">Contenido explícito</Label>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Switch
+                      id="explicit"
+                      checked={formData.explicit || false}
+                      onCheckedChange={(checked) => setFormData({ ...formData, explicit: checked })}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {formData.explicit ? "Sí" : "No"}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Campo: Popularidad (0-100) */}

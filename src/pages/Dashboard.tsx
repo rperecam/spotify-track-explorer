@@ -48,7 +48,6 @@ interface Track {
   energy: number;
   valence: number;
   tempo: number;
-  year: number;
 }
 
 interface ArtistStats {
@@ -444,6 +443,7 @@ const Dashboard = () => {
                       backgroundColor: "hsl(0, 0%, 12%)",
                       border: "1px solid hsl(0, 0%, 25%)",
                       borderRadius: "8px",
+                      color: "hsl(45, 100%, 51%)",
                     }}
                   />
                   <Bar dataKey="count" radius={[8, 8, 0, 0]}>
@@ -481,6 +481,7 @@ const Dashboard = () => {
                       backgroundColor: "hsl(0, 0%, 12%)",
                       border: "1px solid hsl(0, 0%, 25%)",
                       borderRadius: "8px",
+                      color: "hsl(45, 100%, 51%)",
                     }}
                   />
                   <Bar dataKey="count" radius={[8, 8, 0, 0]}>
