@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   getTracks,
+  getAllTracks,
   getTrack,
   createTrack,
   updateTrack,
@@ -10,6 +11,7 @@ const {
 const { protect, admin } = require('../middleware/auth');
 
 router.get('/', getTracks);
+router.get('/all', getAllTracks);
 router.get('/:id', getTrack);
 router.post('/', protect, admin, createTrack);
 router.put('/:id', protect, admin, updateTrack);

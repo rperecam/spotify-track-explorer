@@ -1,135 +1,90 @@
-// ============================================================================
-// Página: Autenticación
-// Descripción: Login y registro de usuarios con validación Zod
-// ============================================================================
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Music } from "lucide-react";
-import { z } from "zod";
-
-// Schema de validación para login
-const loginSchema = z.object({
-  email: z.string().email("Email inválido").max(255, "Email demasiado largo"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-});
-
-// Schema de validación para registro (extiende login)
-const registerSchema = loginSchema.extend({
-  username: z.string().min(3, "El username debe tener al menos 3 caracteres").max(50, "Username demasiado largo"),
-});
+import { useAuth } from "@/contexts/AuthContext";
 
 const Auth = () => {
-  // Estado: Controlar si estamos en modo login o registro
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [loading, setLoading] = useState(false);
-  
-  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+  const { user, signIn, signUp, loading } = useAuth();
 
-  // Redirigir si el usuario ya ha iniciado sesión
-  if (user) {
-    navigate("/explore");
-    return null;
-  }
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    username: "",
+  });
 
-  // Handler: Procesar formulario de login o registro
+  // Redirigir si el usuario ya está autenticado
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/explore", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
       if (isLogin) {
-        // Validar datos de login
-        const validation = loginSchema.safeParse({ email, password });
-        if (!validation.success) {
-          toast.error(validation.error.errors[0].message);
-          setLoading(false);
-          return;
-        }
-
-        // Intentar login
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast.error("Credenciales incorrectas");
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success("¡Bienvenido de nuevo!");
-          navigate("/explore");
-        }
+        await signIn(formData.email, formData.password);
       } else {
-        // Validar datos de registro
-        const validation = registerSchema.safeParse({ email, password, username });
-        if (!validation.success) {
-          toast.error(validation.error.errors[0].message);
-          setLoading(false);
+        if (!formData.username.trim()) {
+          toast.error("El nombre de usuario es requerido");
           return;
         }
-
-        // Intentar registro
-        const { error } = await signUp(email, password, username);
-        if (error) {
-          if (error.message.includes("already registered")) {
-            toast.error("Este email ya está registrado");
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success("¡Cuenta creada! Iniciando sesión...");
-          navigate("/explore");
-        }
+        await signUp(formData.email, formData.password, formData.username);
       }
-    } finally {
-      setLoading(false);
+
+      toast.success(isLogin ? "Sesión iniciada" : "Cuenta creada exitosamente");
+      navigate("/explore");
+    } catch (error) {
+      // Manejo seguro del error
+      const errorMessage = error instanceof Error
+        ? error.message
+        : "Error en la autenticación";
+
+      toast.error(errorMessage);
+      console.error("Error de autenticación:", error);
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
-      <Card className="w-full max-w-md shadow-[var(--shadow-card)]">
-        <CardHeader className="space-y-4">
-          <div className="flex justify-center">
-            <div className="p-3 rounded-xl bg-primary/10">
-              <Music className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-          <div className="text-center">
-            <CardTitle className="text-2xl">
-              {isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
-            </CardTitle>
-            <CardDescription>
-              {isLogin
-                ? "Accede a tu cuenta del Explorador de Spotify"
-                : "Regístrate para explorar pistas de Spotify"}
-            </CardDescription>
-          </div>
-        </CardHeader>
+  // Mostrar loading mientras se verifica la sesión
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Cargando...</p>
+      </div>
+    );
+  }
 
+  // No renderizar el formulario si ya está autenticado
+  if (user) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 px-4">
+      <Card className="w-full max-w-md shadow-2xl">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl">
+            {isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">Nombre de usuario</Label>
                 <Input
                   id="username"
                   type="text"
-                  placeholder="tu_username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   required={!isLogin}
-                  maxLength={50}
                 />
               </div>
             )}
@@ -139,11 +94,9 @@ const Auth = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                maxLength={255}
               />
             </div>
 
@@ -152,34 +105,24 @@ const Auth = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
-                minLength={6}
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading ? "Procesando..." : isLogin ? "Iniciar Sesión" : "Registrarse"}
+            <Button type="submit" className="w-full">
+              {isLogin ? "Iniciar Sesión" : "Registrarse"}
             </Button>
 
-            <div className="text-center">
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm"
-              >
-                {isLogin
-                  ? "¿No tienes cuenta? Regístrate"
-                  : "¿Ya tienes cuenta? Inicia sesión"}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => setIsLogin(!isLogin)}
+            >
+              {isLogin ? "¿No tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Inicia sesión"}
+            </Button>
           </form>
         </CardContent>
       </Card>

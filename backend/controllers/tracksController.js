@@ -69,6 +69,22 @@ exports.getTracks = async (req, res) => {
   }
 };
 
+// @desc    Get all tracks without pagination
+// @route   GET /api/tracks/all
+// @access  Public
+exports.getAllTracks = async (req, res) => {
+  try {
+    const tracks = await Track.find()
+      .sort({ popularity: -1 })
+      .select('name artist_name genre popularity energy danceability tempo duration_ms valence explicit');
+
+    res.json(tracks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // @desc    Get single track
 // @route   GET /api/tracks/:id
 // @access  Public

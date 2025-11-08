@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/services/api";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Music, TrendingUp, Clock, AlertCircle, User, Zap, Heart, Activity } from "lucide-react";
@@ -84,62 +84,41 @@ const Dashboard = () => {
   // Queries de datos
   // ============================================================================
 
-  // Query: Estadísticas agregadas por género
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ["genre-stats"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_genre_stats");
-      if (error) throw error;
-      return data as unknown as GenreStats[];
-    },
-  });
+// Query 1
+const { data: stats, isLoading } = useQuery({
+  queryKey: ["genre-stats"],
+  queryFn: api.getGenreStats,
+});
 
-  // Query: Todas las pistas para cálculos avanzados
-  const { data: allTracks } = useQuery({
-    queryKey: ["all-tracks"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tracks")
-        .select("*")
-        .order("popularity", { ascending: false });
-      if (error) throw error;
-      return data as Track[];
-    },
-  });
+// Query 2
+const { data: allTracks } = useQuery({
+  queryKey: ["all-tracks"],
+  queryFn: api.getAllTracks,
+});
 
-  // Query: Top 10 pistas más populares
-  const { data: topTracks } = useQuery({
-    queryKey: ["top-tracks"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tracks")
-        .select("*")
-        .order("popularity", { ascending: false })
-        .limit(10);
-      if (error) throw error;
-      return data as Track[];
-    },
-  });
+// Query 3
+const { data: topTracks } = useQuery({
+  queryKey: ["top-tracks"],
+  queryFn: async () => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/dashboard/top-popular?limit=10`);
+    if (!res.ok) throw new Error('Error al obtener top pistas');
+    return res.json();
+  },
+});
 
-  // Query: Estadísticas por artista
-  const { data: artistStats } = useQuery({
-    queryKey: ["artist-stats"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_artist_stats");
-      if (error) throw error;
-      return data as ArtistStats[];
-    },
-  });
 
-  // Query: Canciones explícitas por género
-  const { data: explicitByGenre } = useQuery({
-    queryKey: ["explicit-by-genre"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_explicit_by_genre");
-      if (error) throw error;
-      return data as ExplicitByGenre[];
-    },
-  });
+// Query 4
+const { data: artistStats } = useQuery({
+  queryKey: ["artist-stats"],
+  queryFn: api.getArtistStats,
+});
+
+// Query 5
+const { data: explicitByGenre } = useQuery({
+  queryKey: ["explicit-by-genre"],
+  queryFn: api.getExplicitByGenre,
+});
+
 
   // ============================================================================
   // Cálculos de métricas globales
@@ -454,7 +433,7 @@ const Dashboard = () => {
                   <Bar dataKey="count" radius={[8, 8, 0, 0]}>
                     {energyLevelDistribution.map((entry, index) => (
                       <Cell
-                        key={`cell-${index}`}
+                        key={`energy-${entry.level}-${index}`}
                         fill={
                           index === 0
                             ? "hsl(210, 100%, 60%)"
@@ -497,7 +476,7 @@ const Dashboard = () => {
                   <Bar dataKey="count" radius={[8, 8, 0, 0]}>
                     {moodDistribution.map((entry, index) => (
                       <Cell
-                        key={`cell-${index}`}
+                        key={`mood-${entry.mood}-${index}`}
                         fill={
                           index === 0
                             ? "hsl(220, 80%, 50%)"
@@ -525,7 +504,7 @@ const Dashboard = () => {
               <div className="space-y-3">
                 {artistStats?.slice(0, 5).map((artist, index) => (
                   <div
-                    key={artist.artist_name}
+                    key={`artist-${artist.artist_name}-${index}`}
                     className="flex items-center gap-3 p-3 bg-secondary rounded-lg"
                   >
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
@@ -560,7 +539,7 @@ const Dashboard = () => {
               ) : (
                 <div className="space-y-4">
                   {stats?.slice(0, 5).map((stat) => (
-                    <div key={stat.genre} className="space-y-2">
+                    <div key={`genre-${stat.genre}-${stat.count}`} className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="font-medium">{stat.genre}</span>
                         <span className="text-muted-foreground">{stat.count} pistas</span>
@@ -598,7 +577,7 @@ const Dashboard = () => {
               <div className="space-y-3">
                 {explicitByGenre?.slice(0, 5).map((genre, index) => (
                   <div
-                    key={genre.genre}
+                    key={`explicit-${genre.genre}-${index}`}
                     className="flex items-center gap-3 p-3 bg-secondary rounded-lg"
                   >
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
@@ -629,9 +608,9 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {topTracks?.map((track, index) => (
+                {topTracks?.map((track: Track, index: number) => (
                   <div
-                    key={track.id}
+                    key={`top-track-${track.id}`}
                     className="flex items-center gap-3 p-3 bg-secondary rounded-lg"
                   >
                     <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">

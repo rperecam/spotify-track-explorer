@@ -1,95 +1,59 @@
 const User = require('../models/User');
-const Profile = require('../models/Profile');
 const jwt = require('jsonwebtoken');
 
-// Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d'
-  });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
-// @desc    Register new user
-// @route   POST /api/auth/signup
-// @access  Public
-exports.signup = async (req, res) => {
+exports.register = async (req, res) => {
   try {
     const { email, password, username } = req.body;
 
-    // Check if user exists
     const userExists = await User.findOne({ email });
-
     if (userExists) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({ error: 'El usuario ya existe' });
     }
 
-    // Create user
-    const user = await User.create({
-      email,
-      password,
-      role: 'user'
-    });
+    const user = await User.create({ email, password, username });
 
-    // Create profile
-    await Profile.create({
-      user_id: user._id,
-      display_name: username || email.split('@')[0]
+    res.status(201).json({
+      user: { id: user._id, email: user.email, username: user.username },
+      token: generateToken(user._id)
     });
-
-    if (user) {
-      res.status(201).json({
-        _id: user._id,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id)
-      });
-    }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
+exports.getMe = async (req, res) => {
+  res.json({
+    id: req.user._id,
+    email: req.user.email,
+    username: req.user.username,
+    role: req.user.role // Agregar role
+  });
+};
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check for user email
-    const user = await User.findOne({ email });
-
-    if (user && (await user.comparePassword(password))) {
-      res.json({
-        _id: user._id,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id)
-      });
-    } else {
-      res.status(401).json({ error: 'Invalid email or password' });
+    const user = await User.findOne({ email }).select('+password');
+    if (!user || !(await user.matchPassword(password))) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// @desc    Get current user
-// @route   GET /api/auth/me
-// @access  Private
-exports.getMe = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('-password');
-    const profile = await Profile.findOne({ user_id: req.user._id });
 
     res.json({
-      user,
-      profile
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        role: user.role // Agregar role
+      },
+      token: generateToken(user._id)
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
+

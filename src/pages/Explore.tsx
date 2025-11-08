@@ -1,238 +1,306 @@
 // ============================================================================
 // Página: Explorador de Pistas
-// Descripción: Búsqueda avanzada de pistas musicales con filtros complejos
+// Descripción: Interfaz de búsqueda y filtrado avanzado de pistas musicales
 // ============================================================================
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Search, Music2 } from "lucide-react";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Search, Music, TrendingUp, Activity } from "lucide-react";
+
+// ============================================================================
+// Interfaces de tipos de datos
+// ============================================================================
 
 interface Track {
   id: string;
   name: string;
   artist_name: string;
+  album_name?: string;
   genre: string;
-  popularity: number;
-  energy: number;
-  danceability: number;
-  tempo: number;
+  explicit: boolean;
   duration_ms: number;
+  popularity: number;
+  danceability: number;
+  energy: number;
   valence: number;
-}
-
-interface SearchFilters {
-  query: string;
-  minEnergy: number;
-  maxEnergy: number;
-  minDanceability: number;
-  maxDanceability: number;
-  minPopularity: number;
-  maxPopularity: number;
+  tempo: number;
 }
 
 const Explore = () => {
-  // Estado: Filtros temporales (se aplican al hacer click en "Buscar")
-  const [filters, setFilters] = useState<SearchFilters>({
-    query: "",
+  // ============================================================================
+  // Estados: Query de búsqueda y filtros
+  // ============================================================================
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState({
     minEnergy: 0,
-    maxEnergy: 100,
+    maxEnergy: 1,
     minDanceability: 0,
-    maxDanceability: 100,
+    maxDanceability: 1,
     minPopularity: 0,
     maxPopularity: 100,
   });
 
-  // Estado: Filtros activos aplicados a la query
-  const [activeFilters, setActiveFilters] = useState<SearchFilters>(filters);
+  // ============================================================================
+  // Query: Obtener pistas filtradas desde la API
+  // ============================================================================
 
-  // Query: Buscar pistas con filtros activos
   const { data: tracks, isLoading } = useQuery({
-    queryKey: ["tracks", activeFilters],
+    queryKey: ["explore-tracks", searchQuery, filters],
     queryFn: async () => {
-      let query = supabase.from("tracks").select("*");
+      const params = new URLSearchParams();
 
-      // Aplicar búsqueda de texto
-      if (activeFilters.query) {
-        query = query.or(
-          `name.ilike.%${activeFilters.query}%,artist_name.ilike.%${activeFilters.query}%`
-        );
+      if (searchQuery) {
+        params.append("search", searchQuery);
       }
 
-      // Aplicar filtros numéricos de rango
-      query = query
-        .gte("energy", activeFilters.minEnergy / 100)
-        .lte("energy", activeFilters.maxEnergy / 100)
-        .gte("danceability", activeFilters.minDanceability / 100)
-        .lte("danceability", activeFilters.maxDanceability / 100)
-        .gte("popularity", activeFilters.minPopularity)
-        .lte("popularity", activeFilters.maxPopularity)
-        .order("popularity", { ascending: false })
-        .limit(50);
+      params.append("energy_min", filters.minEnergy.toString());
+      params.append("energy_max", filters.maxEnergy.toString());
+      params.append("danceability_min", filters.minDanceability.toString());
+      params.append("danceability_max", filters.maxDanceability.toString());
+      params.append("popularity_min", filters.minPopularity.toString());
+      params.append("popularity_max", filters.maxPopularity.toString());
+      params.append("limit", "50");
 
-      const { data, error } = await query;
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/tracks?${params.toString()}`
+      );
 
-      if (error) {
-        toast.error("Error al buscar pistas");
-        throw error;
+      if (!response.ok) {
+        throw new Error("Error al obtener las pistas");
       }
 
-      return data as Track[];
+      const data = await response.json();
+      return data.tracks as Track[];
     },
   });
 
-  // Handler: Aplicar filtros a la búsqueda
-  const handleSearch = () => {
-    setActiveFilters(filters);
-  };
+  // ============================================================================
+  // Función auxiliar: Formatear duración
+  // ============================================================================
 
-  // Función: Formatear duración de milisegundos a minutos:segundos
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    const seconds = ((ms % 60000) / 1000).toFixed(0);
+    return `${minutes}:${seconds.padStart(2, "0")}`;
   };
+
+  // ============================================================================
+  // Renderizado del componente
+  // ============================================================================
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <main className="container mx-auto px-4 py-8">
+        {/* Encabezado */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Explorador de Pistas
           </h1>
           <p className="text-muted-foreground">
-            Búsqueda avanzada con filtros múltiples
+            Busca y filtra pistas musicales con opciones avanzadas
           </p>
         </div>
 
-        <Card className="mb-8 shadow-[var(--shadow-card)]">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5 text-primary" />
-              Filtros de Búsqueda
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>Buscar por nombre o artista</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Ej: Love, Beatles..."
-                  value={filters.query}
-                  onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-                />
-                <Button onClick={handleSearch} className="gap-2">
+        {/* Panel de Filtros */}
+        <Card className="shadow-[var(--shadow-card)] mb-8">
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              {/* Campo de búsqueda */}
+              <div className="space-y-2">
+                <Label htmlFor="search" className="flex items-center gap-2">
                   <Search className="h-4 w-4" />
-                  Buscar
+                  Buscar por nombre o artista
+                </Label>
+                <Input
+                  id="search"
+                  placeholder="Escribe el nombre de una canción o artista..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Filtros numéricos */}
+              <div className="grid gap-6 md:grid-cols-3">
+                {/* Filtro de Energía */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    Energía ({Math.round(filters.minEnergy * 100)} -{" "}
+                    {Math.round(filters.maxEnergy * 100)})
+                  </Label>
+                  <Slider
+                    value={[
+                      filters.minEnergy * 100,
+                      filters.maxEnergy * 100,
+                    ]}
+                    onValueChange={(values) =>
+                      setFilters({
+                        ...filters,
+                        minEnergy: values[0] / 100,
+                        maxEnergy: values[1] / 100,
+                      })
+                    }
+                    max={100}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Filtro de Bailabilidad */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Music className="h-4 w-4" />
+                    Bailabilidad ({Math.round(filters.minDanceability * 100)} -{" "}
+                    {Math.round(filters.maxDanceability * 100)})
+                  </Label>
+                  <Slider
+                    value={[
+                      filters.minDanceability * 100,
+                      filters.maxDanceability * 100,
+                    ]}
+                    onValueChange={(values) =>
+                      setFilters({
+                        ...filters,
+                        minDanceability: values[0] / 100,
+                        maxDanceability: values[1] / 100,
+                      })
+                    }
+                    max={100}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Filtro de Popularidad */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Popularidad ({filters.minPopularity} - {filters.maxPopularity})
+                  </Label>
+                  <Slider
+                    value={[filters.minPopularity, filters.maxPopularity]}
+                    onValueChange={(values) =>
+                      setFilters({
+                        ...filters,
+                        minPopularity: values[0],
+                        maxPopularity: values[1],
+                      })
+                    }
+                    max={100}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Botón para resetear filtros */}
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilters({
+                      minEnergy: 0,
+                      maxEnergy: 1,
+                      minDanceability: 0,
+                      maxDanceability: 1,
+                      minPopularity: 0,
+                      maxPopularity: 100,
+                    });
+                  }}
+                >
+                  Resetear Filtros
                 </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              {/* Filtro de Energía */}
-              <div className="space-y-2">
-                <Label>Energía ({filters.minEnergy} - {filters.maxEnergy})</Label>
-                <Slider
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={[filters.minEnergy, filters.maxEnergy]}
-                  onValueChange={([min, max]) =>
-                    setFilters({ ...filters, minEnergy: min, maxEnergy: max })
-                  }
-                  className="mt-2"
-                />
-              </div>
-
-              {/* Filtro de Bailabilidad */}
-              <div className="space-y-2">
-                <Label>Bailabilidad ({filters.minDanceability} - {filters.maxDanceability})</Label>
-                <Slider
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={[filters.minDanceability, filters.maxDanceability]}
-                  onValueChange={([min, max]) =>
-                    setFilters({ ...filters, minDanceability: min, maxDanceability: max })
-                  }
-                  className="mt-2"
-                />
-              </div>
-
-              {/* Filtro de Popularidad */}
-              <div className="space-y-2">
-                <Label>Popularidad ({filters.minPopularity} - {filters.maxPopularity})</Label>
-                <Slider
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={[filters.minPopularity, filters.maxPopularity]}
-                  onValueChange={([min, max]) =>
-                    setFilters({ ...filters, minPopularity: min, maxPopularity: max })
-                  }
-                  className="mt-2"
-                />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {isLoading ? (
-          <div className="text-center py-12">
-            <Music2 className="h-12 w-12 text-primary animate-pulse mx-auto mb-4" />
-            <p className="text-muted-foreground">Cargando pistas...</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">
-              {tracks?.length || 0} pistas encontradas
-            </h2>
-            
-            <div className="grid gap-4">
-              {tracks?.map((track) => (
-                <Card key={track.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1 flex-1">
-                        <h3 className="text-xl font-semibold">{track.name}</h3>
-                        <p className="text-muted-foreground">{track.artist_name}</p>
-                        <div className="flex gap-4 text-sm text-muted-foreground mt-2">
-                          <span>{track.genre}</span>
-                          <span>•</span>
-                          <span>{formatDuration(track.duration_ms)}</span>
+        {/* Resultados de búsqueda */}
+        <div className="space-y-4">
+          {isLoading ? (
+            <Card className="shadow-[var(--shadow-card)]">
+              <CardContent className="py-12">
+                <p className="text-muted-foreground text-center">
+                  Cargando pistas...
+                </p>
+              </CardContent>
+            </Card>
+          ) : tracks && tracks.length > 0 ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-muted-foreground">
+                  {tracks.length} pista{tracks.length !== 1 ? "s" : ""}{" "}
+                  encontrada{tracks.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+
+              {tracks.map((track) => (
+                <Card
+                  key={`explore-track-${track.id}`}
+                  className="hover:shadow-[var(--shadow-hover)] transition-shadow"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-lg truncate">
+                            {track.name}
+                          </h3>
+                          {track.explicit && (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-destructive/20 text-destructive rounded">
+                              E
+                            </span>
+                          )}
                         </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <div className="text-center p-2 bg-primary/10 rounded-lg">
-                          <div className="text-xs text-muted-foreground">Pop</div>
-                          <div className="text-lg font-bold text-primary">{track.popularity}</div>
-                        </div>
-                        <div className="text-center p-2 bg-secondary rounded-lg">
-                          <div className="text-xs text-muted-foreground">Energy</div>
-                          <div className="text-lg font-bold">{Math.round(track.energy * 100)}</div>
-                        </div>
-                        <div className="text-center p-2 bg-secondary rounded-lg">
-                          <div className="text-xs text-muted-foreground">Dance</div>
-                          <div className="text-lg font-bold">{Math.round(track.danceability * 100)}</div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {track.artist_name}
+                          {track.album_name && ` • ${track.album_name}`}
+                        </p>
+                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Music className="h-3 w-3" />
+                            {track.genre}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3" />
+                            Popularidad: {track.popularity}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Activity className="h-3 w-3" />
+                            Energía: {Math.round(track.energy * 100)}
+                          </span>
+                          <span>
+                            Bailabilidad: {Math.round(track.danceability * 100)}
+                          </span>
+                          <span>Tempo: {Math.round(track.tempo)} BPM</span>
+                          <span>Duración: {formatDuration(track.duration_ms)}</span>
                         </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          </div>
-        )}
+            </>
+          ) : (
+            <Card className="shadow-[var(--shadow-card)]">
+              <CardContent className="py-12">
+                <p className="text-muted-foreground text-center">
+                  No se encontraron pistas con los filtros aplicados
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </main>
     </div>
   );
