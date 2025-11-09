@@ -61,15 +61,21 @@ const trackSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'El tempo es requerido'],
     min: [0, 'El tempo debe ser mayor a 0']
+  },
+  num_artists: {
+    type: Number,
+    required: [true, 'El número de artistas es requerido'],
+    min: [1, 'Debe haber al menos un artista']
   }
 }, {
-  timestamps: true, // Esto crea automáticamente created_at y updated_at
+  timestamps: true,
   collection: 'tracks'
 });
 
-// Índices para optimización de búsquedas
-trackSchema.index({ name: 'text', artist_name: 'text' });
-trackSchema.index({ genre: 1 });
 trackSchema.index({ popularity: -1 });
+trackSchema.index({ genre: 1, popularity: -1 });
+trackSchema.index({ artist_name: 1, popularity: -1 });
+trackSchema.index({ explicit: 1, genre: 1 });
+
 
 module.exports = mongoose.model('Track', trackSchema);

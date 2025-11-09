@@ -74,10 +74,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(data.user);
   };
 
-  const signOut = () => {
+const signOut = async () => {
+  try {
+    // Limpiar token de localStorage
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    // Actualizar estado local
     setUser(null);
-  };
+
+    // Redireccionar a la página principal
+    window.location.href = 'http://localhost:8080/';
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+  }
+};
 
   // Calcular si el usuario es admin
   const isAdmin = user?.role === 'admin';

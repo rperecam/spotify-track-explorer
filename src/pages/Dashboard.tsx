@@ -495,39 +495,40 @@ const { data: explicitByGenre } = useQuery({
 
         {/* Rankings y Estadísticas por Género */}
         <div className="grid gap-6 lg:grid-cols-2 mb-8">
-          {/* Top 5 Artistas por Popularidad Media */}
-          <Card className="shadow-[var(--shadow-card)]">
-            <CardHeader>
-              <CardTitle>Top 5 Artistas por Popularidad Media</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {artistStats?.slice(0, 5).map((artist, index) => (
-                  <div
-                    key={`artist-${artist.artist_name}-${index}`}
-                    className="flex items-center gap-3 p-3 bg-secondary rounded-lg"
-                  >
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{artist.artist_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {artist.track_count} canciones
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-primary">
-                        {Math.round(artist.avg_popularity)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Pop Media</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
+         {/* Top Artistas por Cantidad de Tracks */}
+         <Card className="shadow-[var(--shadow-card)]">
+           <CardHeader>
+             <CardTitle className="flex items-center gap-2">
+               <TrendingUp className="h-5 w-5 text-primary" />
+               Top Artistas por Tracks
+             </CardTitle>
+           </CardHeader>
+           <CardContent>
+             <div className="space-y-3">
+               {artistStats?.slice(0, 10).map((artist, idx) => (
+                 <div
+                   key={idx}
+                   className="flex items-center justify-between p-3 rounded-lg bg-secondary/50"
+                 >
+                   <div className="flex items-center gap-3">
+                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                       {idx + 1}
+                     </span>
+                     <span className="font-medium">
+                       {Array.isArray(artist.artist_name)
+                         ? artist.artist_name[0]
+                         : artist.artist_name}
+                     </span>
+                   </div>
+                   <div className="flex items-center gap-2 text-muted-foreground">
+                     <Music className="h-4 w-4" />
+                     <span className="font-semibold">{artist.track_count} tracks</span>
+                   </div>
+                 </div>
+               ))}
+             </div>
+           </CardContent>
+         </Card>
           {/* Estadísticas por Género */}
           <Card className="shadow-[var(--shadow-card)]">
             <CardHeader>

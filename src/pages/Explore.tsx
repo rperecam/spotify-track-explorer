@@ -3,7 +3,7 @@
 // Descripción: Interfaz de búsqueda y filtrado avanzado de pistas musicales
 // ============================================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,9 +33,9 @@ interface Track {
 }
 
 const Explore = () => {
-  // ============================================================================
+  // ========================================================================
   // Estados: Query de búsqueda y filtros
-  // ============================================================================
+  // ========================================================================
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
@@ -47,18 +47,19 @@ const Explore = () => {
     maxPopularity: 100,
   });
 
-  // ============================================================================
-  // Query: Obtener pistas filtradas desde la API
-  // ============================================================================
+  // ========================================================================
+  // Paginación y query
+  // ========================================================================
 
-  const { data: tracks, isLoading } = useQuery({
-    queryKey: ["explore-tracks", searchQuery, filters],
+  const [offset, setOffset] = useState(0);
+  const LIMIT = 15;
+
+  const { data: tracksData, isLoading, isFetching: isFetchingNextPage } = useQuery({
+    queryKey: ["explore-tracks", searchQuery, filters, offset],
     queryFn: async () => {
       const params = new URLSearchParams();
 
-      if (searchQuery) {
-        params.append("search", searchQuery);
-      }
+      if (searchQuery) params.append("search", searchQuery);
 
       params.append("energy_min", filters.minEnergy.toString());
       params.append("energy_max", filters.maxEnergy.toString());
@@ -66,7 +67,8 @@ const Explore = () => {
       params.append("danceability_max", filters.maxDanceability.toString());
       params.append("popularity_min", filters.minPopularity.toString());
       params.append("popularity_max", filters.maxPopularity.toString());
-      params.append("limit", "50");
+      params.append("limit", LIMIT.toString());
+      params.append("skip", offset.toString());
 
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/tracks?${params.toString()}`
@@ -76,14 +78,42 @@ const Explore = () => {
         throw new Error("Error al obtener las pistas");
       }
 
-      const data = await response.json();
-      return data.tracks as Track[];
+      return await response.json();
     },
+    keepPreviousData: true,
   });
 
-  // ============================================================================
+  // ========================================================================
+  // Estado acumulado de pistas
+  // ========================================================================
+
+  const [allTracks, setAllTracks] = useState<Track[]>([]);
+
+  useEffect(() => {
+    if (tracksData?.tracks) {
+      if (offset === 0) {
+        setAllTracks(tracksData.tracks);
+      } else {
+        setAllTracks((prev) => [...prev, ...tracksData.tracks]);
+      }
+    }
+  }, [tracksData, offset]);
+
+  // Resetear cuando cambien filtros o búsqueda
+  useEffect(() => {
+    setOffset(0);
+    setAllTracks([]);
+  }, [searchQuery, filters]);
+
+  const hasMore = tracksData?.tracks?.length === LIMIT;
+
+  const handleLoadMore = () => {
+    setOffset((prev) => prev + LIMIT);
+  };
+
+  // ========================================================================
   // Función auxiliar: Formatear duración
-  // ============================================================================
+  // ========================================================================
 
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
@@ -91,9 +121,9 @@ const Explore = () => {
     return `${minutes}:${seconds.padStart(2, "0")}`;
   };
 
-  // ============================================================================
-  // Renderizado del componente
-  // ============================================================================
+  // ========================================================================
+  // Renderizado
+  // ========================================================================
 
   return (
     <div className="min-h-screen bg-background">
@@ -130,7 +160,7 @@ const Explore = () => {
 
               {/* Filtros numéricos */}
               <div className="grid gap-6 md:grid-cols-3">
-                {/* Filtro de Energía */}
+                {/* Energía */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Activity className="h-4 w-4" />
@@ -138,10 +168,7 @@ const Explore = () => {
                     {Math.round(filters.maxEnergy * 100)})
                   </Label>
                   <Slider
-                    value={[
-                      filters.minEnergy * 100,
-                      filters.maxEnergy * 100,
-                    ]}
+                    value={[filters.minEnergy * 100, filters.maxEnergy * 100]}
                     onValueChange={(values) =>
                       setFilters({
                         ...filters,
@@ -155,7 +182,7 @@ const Explore = () => {
                   />
                 </div>
 
-                {/* Filtro de Bailabilidad */}
+                {/* Bailabilidad */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Music className="h-4 w-4" />
@@ -180,7 +207,7 @@ const Explore = () => {
                   />
                 </div>
 
-                {/* Filtro de Popularidad */}
+                {/* Popularidad */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" />
@@ -202,7 +229,7 @@ const Explore = () => {
                 </div>
               </div>
 
-              {/* Botón para resetear filtros */}
+              {/* Reset Filtros */}
               <div className="flex justify-end">
                 <Button
                   variant="outline"
@@ -225,9 +252,9 @@ const Explore = () => {
           </CardContent>
         </Card>
 
-        {/* Resultados de búsqueda */}
+        {/* Resultados */}
         <div className="space-y-4">
-          {isLoading ? (
+          {isLoading && offset === 0 ? (
             <Card className="shadow-[var(--shadow-card)]">
               <CardContent className="py-12">
                 <p className="text-muted-foreground text-center">
@@ -235,16 +262,16 @@ const Explore = () => {
                 </p>
               </CardContent>
             </Card>
-          ) : tracks && tracks.length > 0 ? (
+          ) : allTracks && allTracks.length > 0 ? (
             <>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-muted-foreground">
-                  {tracks.length} pista{tracks.length !== 1 ? "s" : ""}{" "}
-                  encontrada{tracks.length !== 1 ? "s" : ""}
+                  {allTracks.length} pista{allTracks.length !== 1 ? "s" : ""}{" "}
+                  {hasMore ? "cargadas" : "encontradas"}
                 </p>
               </div>
 
-              {tracks.map((track) => (
+              {allTracks.map((track) => (
                 <Card
                   key={`explore-track-${track.id}`}
                   className="hover:shadow-[var(--shadow-hover)] transition-shadow"
@@ -290,6 +317,19 @@ const Explore = () => {
                   </CardContent>
                 </Card>
               ))}
+
+              {hasMore && (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    onClick={handleLoadMore}
+                    disabled={isFetchingNextPage}
+                    variant="outline"
+                    size="lg"
+                  >
+                    {isFetchingNextPage ? "Cargando..." : "Cargar más"}
+                  </Button>
+                </div>
+              )}
             </>
           ) : (
             <Card className="shadow-[var(--shadow-card)]">
