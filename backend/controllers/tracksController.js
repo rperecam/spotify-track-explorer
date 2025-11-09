@@ -1,25 +1,33 @@
 const Track = require('../models/Track');
 
+// Función auxiliar para mapear _id a id
+const mapTrackResponse = (track) => {
+  const trackObj = track.toObject ? track.toObject() : track;
+  return {
+    ...trackObj,
+    id: trackObj._id.toString(),
+  };
+};
+
 // @desc    Get all tracks with filters
 // @route   GET /api/tracks
 // @access  Public
 exports.getTracks = async (req, res) => {
   try {
-    const { 
-      search, 
-      energy_min, 
-      energy_max, 
-      danceability_min, 
+    const {
+      search,
+      energy_min,
+      energy_max,
+      danceability_min,
       danceability_max,
       popularity_min,
       popularity_max,
-      limit = 50,
-      page = 1
+      page = 1,
+      limit = 50
     } = req.query;
 
     let query = {};
 
-    // Text search (simulates MongoDB $text search)
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -27,7 +35,6 @@ exports.getTracks = async (req, res) => {
       ];
     }
 
-    // Numeric range filters
     if (energy_min || energy_max) {
       query.energy = {};
       if (energy_min) query.energy.$gte = parseFloat(energy_min);
@@ -56,7 +63,7 @@ exports.getTracks = async (req, res) => {
     const total = await Track.countDocuments(query);
 
     res.json({
-      tracks,
+      tracks: tracks.map(mapTrackResponse),
       pagination: {
         total,
         page: parseInt(page),
@@ -69,36 +76,19 @@ exports.getTracks = async (req, res) => {
   }
 };
 
-// @desc    Get all tracks without pagination
-// @route   GET /api/tracks/all
-// @access  Public
-exports.getAllTracks = async (req, res) => {
-  try {
-    const tracks = await Track.find()
-      .sort({ popularity: -1 })
-      .select('name artist_name genre popularity energy danceability tempo duration_ms valence explicit');
-
-    res.json(tracks);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
 // @desc    Get single track
 // @route   GET /api/tracks/:id
 // @access  Public
-exports.getTrack = async (req, res) => {
+exports.getTrackById = async (req, res) => {
   try {
     const track = await Track.findById(req.params.id);
 
     if (!track) {
-      return res.status(404).json({ error: 'Track not found' });
+      return res.status(404).json({ error: 'Pista no encontrada' });
     }
 
-    res.json(track);
+    res.json(mapTrackResponse(track));
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -109,9 +99,8 @@ exports.getTrack = async (req, res) => {
 exports.createTrack = async (req, res) => {
   try {
     const track = await Track.create(req.body);
-    res.status(201).json(track);
+    res.status(201).json(mapTrackResponse(track));
   } catch (error) {
-    console.error(error);
     res.status(400).json({ error: error.message });
   }
 };
@@ -128,12 +117,11 @@ exports.updateTrack = async (req, res) => {
     );
 
     if (!track) {
-      return res.status(404).json({ error: 'Track not found' });
+      return res.status(404).json({ error: 'Pista no encontrada' });
     }
 
-    res.json(track);
+    res.json(mapTrackResponse(track));
   } catch (error) {
-    console.error(error);
     res.status(400).json({ error: error.message });
   }
 };
@@ -146,10 +134,22 @@ exports.deleteTrack = async (req, res) => {
     const track = await Track.findByIdAndDelete(req.params.id);
 
     if (!track) {
-      return res.status(404).json({ error: 'Track not found' });
+      return res.status(404).json({ error: 'Pista no encontrada' });
     }
 
-    res.json({ message: 'Track deleted successfully' });
+    res.json({ message: 'Pista eliminada exitosamente' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// @desc    Get all tracks without pagination
+// @route   GET /api/tracks/all
+// @access  Public
+exports.getAllTracks = async (req, res) => {
+  try {
+    const tracks = await Track.find().sort({ popularity: -1 });
+    res.json(tracks.map(mapTrackResponse));
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
