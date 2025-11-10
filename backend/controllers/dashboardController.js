@@ -341,11 +341,28 @@ exports.getExplicitStats = async (req, res) => {
 // @access  Public
 exports.getPopularityDistribution = async (req, res) => {
   try {
-    const tracks = await Track.find().select('popularity').lean();
-    res.json(tracks.map(track => track.popularity));
+    const distribution = await Track.aggregate([
+      {
+        $group: {
+          _id: '$popularity',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          popularity: '$_id',
+          count: 1,
+          _id: 0
+        }
+      },
+      { $sort: { popularity: 1 } }
+    ]);
+
+    res.json(distribution);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
+
 

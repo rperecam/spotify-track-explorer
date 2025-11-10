@@ -63,6 +63,11 @@ interface ExplicitByGenre {
   explicit_percentage: number;
 }
 
+interface PopularityDistribution {
+  count: number;
+  popularity: number;
+}
+
 // ============================================================================
 // Funciones auxiliares para métricas derivadas
 // ============================================================================
@@ -129,17 +134,17 @@ const { data: explicitStats } = useQuery({
   },
 });
 
-const { data: popularityData } = useQuery({
+// Query 7 - Popularity Distribution (CORREGIDA)
+const { data: popularityData } = useQuery<PopularityDistribution[]>({
   queryKey: ["popularity-distribution"],
   queryFn: async () => {
     const response = await fetch(
       `${import.meta.env.VITE_API_URL}/dashboard/popularity-distribution`
     );
-    if (!response.ok) throw new Error("Error al obtener la distribución de popularidad");
+    if (!response.ok) throw new Error("Error al obtener distribución");
     return await response.json();
   },
 });
-
 
   // ============================================================================
   // Cálculos de métricas globales
@@ -172,21 +177,23 @@ const { data: popularityData } = useQuery({
   // Datos para visualizaciones
   // ============================================================================
 
-  // Histograma de popularidad (rangos de 10)
-const popularityHistogram = popularityData
-  ? Array.from({ length: 10 }, (_, i) => {
-      const rangeStart = i * 10;
-      const rangeEnd = (i + 1) * 10;
-      const count = popularityData.filter(
-        (pop: number) => pop >= rangeStart && pop < rangeEnd
-      ).length;
-      return {
-        range: `${rangeStart}-${rangeEnd}`,
-        count,
-      };
-    })
-  : [];
+  // Histograma de popularidad (rangos de 10) - CORREGIDO
+  const popularityHistogram = popularityData && Array.isArray(popularityData)
+    ? Array.from({ length: 10 }, (_, i) => {
+        const rangeStart = i * 10;
+        const rangeEnd = (i + 1) * 10;
 
+        // Sumar el count de todos los registros dentro del rango
+        const count = popularityData
+          .filter((item) => item.popularity >= rangeStart && item.popularity < rangeEnd)
+          .reduce((sum, item) => sum + item.count, 0);
+
+        return {
+          range: `${rangeStart}-${rangeEnd}`,
+          count,
+        };
+      })
+    : [];
 
   // Dispersión energía vs bailabilidad (sample de 100 canciones)
   const energyDanceData = allTracks
@@ -372,21 +379,27 @@ const popularityHistogram = popularityData
               <CardTitle>Distribución de Popularidad</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={popularityHistogram}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 30%)" />
-                  <XAxis dataKey="range" stroke="hsl(0, 0%, 70%)" />
-                  <YAxis stroke="hsl(0, 0%, 70%)" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 12%)",
-                      border: "1px solid hsl(0, 0%, 25%)",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Bar dataKey="count" fill={COLORS.primary} radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {popularityHistogram.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={popularityHistogram}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 30%)" />
+                    <XAxis dataKey="range" stroke="hsl(0, 0%, 70%)" />
+                    <YAxis stroke="hsl(0, 0%, 70%)" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(0, 0%, 12%)",
+                        border: "1px solid hsl(0, 0%, 25%)",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Bar dataKey="count" fill={COLORS.primary} radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  Cargando datos de popularidad...
+                </div>
+              )}
             </CardContent>
           </Card>
 
