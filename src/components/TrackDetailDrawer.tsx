@@ -11,12 +11,12 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
-import { Music, TrendingUp, Activity, Clock, Gauge, Heart, Users } from "lucide-react";
+import { Music, TrendingUp, Activity, Clock, Gauge, Heart, Users, Volume2, User } from "lucide-react";
 
 interface Track {
   id: string;
   name: string;
-  artist_name: string;
+  artist_name: string | string[];
   album_name?: string;
   genre: string;
   explicit: boolean;
@@ -26,6 +26,7 @@ interface Track {
   energy: number;
   valence: number;
   tempo: number;
+  num_artists?: number; // Añadir este campo
 }
 
 interface TrackDetailDrawerProps {
@@ -76,6 +77,18 @@ export const TrackDetailDrawer = ({
             </div>
           </DrawerHeader>
 
+           <div className="p-6 space-y-1">
+             <div className="flex items-center gap-2 text-muted-foreground">
+               <User className="h-4 w-4" />
+               <span className="text-sm font-medium">Artista(s)</span>
+             </div>
+             <p className="text-lg font-semibold">
+               {Array.isArray(track.artist_name)
+                 ? track.artist_name.join(", ")
+                 : track.artist_name}
+             </p>
+           </div>
+
           <div className="p-6 space-y-6">
             {/* Información del álbum y género */}
             {track.album_name && (
@@ -95,6 +108,15 @@ export const TrackDetailDrawer = ({
 
             {/* Métricas principales */}
             <div className="grid grid-cols-2 gap-4">
+                {track.num_artists && (
+                  <div className="space-y-1 p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      Número de Artistas
+                    </div>
+                    <p className="text-2xl font-bold">{track.num_artists}</p>
+                  </div>
+                )}
               <div className="space-y-1 p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <TrendingUp className="h-4 w-4" />

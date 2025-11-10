@@ -6,8 +6,12 @@ const mapTrackResponse = (track) => {
   return {
     ...trackObj,
     id: trackObj._id.toString(),
+    artist_name: Array.isArray(trackObj.artist_name)
+      ? trackObj.artist_name
+      : trackObj.artist_name
   };
 };
+
 
 // @desc    Get all tracks with filters
 // @route   GET /api/tracks

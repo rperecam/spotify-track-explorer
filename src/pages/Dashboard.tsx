@@ -38,7 +38,7 @@ interface GenreStats {
 interface Track {
   id: string;
   name: string;
-  artist_name: string;
+  artist_name: string | string[];
   album_name?: string;
   genre: string;
   explicit: boolean;

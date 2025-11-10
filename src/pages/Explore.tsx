@@ -1,8 +1,4 @@
-// ============================================================================
-// Página: Explorador de Pistas
-// Descripción: Interfaz de búsqueda y filtrado avanzado de pistas musicales
-// ============================================================================
-
+// `src/pages/Explore.tsx`
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/Navbar";
@@ -14,14 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Search, Music, TrendingUp, Activity } from "lucide-react";
 import { TrackDetailDrawer } from "@/components/TrackDetailDrawer";
 
-// ============================================================================
-// Interfaces de tipos de datos
-// ============================================================================
-
 interface Track {
   id: string;
   name: string;
-  artist_name: string;
+  artist_name: string | string[]; // acepta array o string
   album_name?: string;
   genre: string;
   explicit: boolean;
@@ -35,13 +27,10 @@ interface Track {
 
 interface TracksResponse {
   tracks: Track[];
+  pagination? : any;
 }
 
 const Explore = () => {
-  // ========================================================================
-  // Estados: Query de búsqueda y filtros
-  // ========================================================================
-
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     minEnergy: 0,
@@ -52,13 +41,8 @@ const Explore = () => {
     maxPopularity: 100,
   });
 
-  // Estado para el drawer de detalle
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  // ========================================================================
-  // Paginación y query
-  // ========================================================================
 
   const [offset, setOffset] = useState(0);
   const LIMIT = 15;
@@ -91,10 +75,6 @@ const Explore = () => {
     },
   });
 
-  // ========================================================================
-  // Estado acumulado de pistas
-  // ========================================================================
-
   const [allTracks, setAllTracks] = useState<Track[]>([]);
 
   useEffect(() => {
@@ -107,7 +87,6 @@ const Explore = () => {
     }
   }, [tracksData, offset]);
 
-  // Resetear cuando cambien filtros o búsqueda
   useEffect(() => {
     setOffset(0);
     setAllTracks([]);
@@ -119,26 +98,20 @@ const Explore = () => {
     setOffset((prev) => prev + LIMIT);
   };
 
-  // ========================================================================
-  // Función auxiliar: Formatear duración
-  // ========================================================================
-
   const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = ((ms % 60000) / 1000).toFixed(0);
     return `${minutes}:${seconds.padStart(2, "0")}`;
   };
 
-  // ========================================================================
-  // Renderizado
-  // ========================================================================
+  const formatArtists = (artist: string | string[] | undefined) =>
+    Array.isArray(artist) ? artist.join(", ") : artist ?? "Desconocido";
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        {/* Encabezado */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Explorador de Pistas
@@ -148,11 +121,9 @@ const Explore = () => {
           </p>
         </div>
 
-        {/* Panel de Filtros */}
         <Card className="shadow-[var(--shadow-card)] mb-8">
           <CardContent className="pt-6">
             <div className="space-y-6">
-              {/* Campo de búsqueda */}
               <div className="space-y-2">
                 <Label htmlFor="search" className="flex items-center gap-2">
                   <Search className="h-4 w-4" />
@@ -166,9 +137,7 @@ const Explore = () => {
                 />
               </div>
 
-              {/* Filtros numéricos */}
               <div className="grid gap-6 md:grid-cols-3">
-                {/* Energía */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Activity className="h-4 w-4" />
@@ -190,7 +159,6 @@ const Explore = () => {
                   />
                 </div>
 
-                {/* Bailabilidad */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Music className="h-4 w-4" />
@@ -215,7 +183,6 @@ const Explore = () => {
                   />
                 </div>
 
-                {/* Popularidad */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" />
@@ -237,7 +204,6 @@ const Explore = () => {
                 </div>
               </div>
 
-              {/* Reset Filtros */}
               <div className="flex justify-end">
                 <Button
                   variant="outline"
@@ -260,7 +226,6 @@ const Explore = () => {
           </CardContent>
         </Card>
 
-        {/* Resultados */}
         <div className="space-y-4">
           {isLoading && offset === 0 ? (
             <Card className="shadow-[var(--shadow-card)]">
@@ -302,7 +267,7 @@ const Explore = () => {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">
-                          {track.artist_name}
+                          {formatArtists(track.artist_name)}
                           {track.album_name && ` • ${track.album_name}`}
                         </p>
                         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -355,7 +320,6 @@ const Explore = () => {
         </div>
       </main>
 
-      {/* Drawer de detalle de pista */}
       <TrackDetailDrawer
         track={selectedTrack}
         open={isDrawerOpen}

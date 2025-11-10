@@ -13,11 +13,18 @@ const trackSchema = new mongoose.Schema({
     trim: true,
     maxlength: [255, 'El artista no puede exceder 255 caracteres']
   },
-  album_name: {
-    type: String,
-    trim: true,
-    maxlength: [255, 'El álbum no puede exceder 255 caracteres']
-  },
+    artist_name: {
+      type: mongoose.Schema.Types.Mixed, // Permite tanto String como Array
+      required: [true, 'El artista es requerido'],
+      validate: {
+        validator: function(v) {
+          if (typeof v === 'string') return v.trim().length > 0 && v.length <= 255;
+          if (Array.isArray(v)) return v.length > 0 && v.every(a => typeof a === 'string' && a.trim().length > 0);
+          return false;
+        },
+        message: 'El artista debe ser un string o un array de strings no vacío'
+      }
+    },
   genre: {
     type: String,
     required: [true, 'El género es requerido'],

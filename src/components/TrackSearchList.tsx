@@ -35,7 +35,7 @@ interface TrackSearchListProps {
 export const TrackSearchList = ({ onEdit, onDelete }: TrackSearchListProps) => {
   // Estado: Query de búsqueda de texto
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Estado: Filtros numéricos para energía, bailabilidad y popularidad
   const [filters, setFilters] = useState({
     minEnergy: 0,

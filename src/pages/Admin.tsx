@@ -36,7 +36,7 @@ const trackSchema = z.object({
 interface Track {
   id: string;
   name: string;
-  artist_name: string;
+  artist_name: string | string[];
   genre: string;
   popularity: number;
   energy: number;
