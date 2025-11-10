@@ -179,3 +179,140 @@ exports.getAllTracksForDashboard = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// @desc    Get genre statistics
+// @route   GET /api/dashboard/genre-stats
+// @access  Public
+exports.getGenreStats = async (req, res) => {
+  try {
+    const stats = await Track.aggregate([
+      {
+        $group: {
+          _id: '$genre',
+          count: { $sum: 1 },
+          avg_tempo: { $avg: '$tempo' },
+          avg_energy: { $avg: '$energy' },
+          avg_popularity: { $avg: '$popularity' },
+          avg_danceability: { $avg: '$danceability' }
+        }
+      },
+      { $sort: { count: -1 } },
+      {
+        $project: {
+          genre: '$_id',
+          count: 1,
+          avg_tempo: 1,
+          avg_energy: 1,
+          avg_popularity: 1,
+          avg_danceability: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    res.json(stats);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// @desc    Get top popular tracks
+// @route   GET /api/dashboard/top-popular
+// @access  Public
+exports.getTopPopular = async (req, res) => {
+  try {
+    const tracks = await Track.find()
+      .sort({ popularity: -1 })
+      .limit(10)
+      .select('name artist_name popularity genre');
+
+    res.json(tracks.map(track => ({
+      id: track._id.toString(),
+      name: track.name,
+      artist_name: track.artist_name,
+      popularity: track.popularity,
+      genre: track.genre
+    })));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// @desc    Get artist statistics
+// @route   GET /api/dashboard/artist-stats
+// @access  Public
+exports.getArtistStats = async (req, res) => {
+  try {
+    const stats = await Track.aggregate([
+      {
+        $group: {
+          _id: '$artist_name',
+          track_count: { $sum: 1 },
+          avg_popularity: { $avg: '$popularity' }
+        }
+      },
+      { $sort: { avg_popularity: -1 } },
+      { $limit: 7 },
+      {
+        $project: {
+          artist_name: '$_id',
+          track_count: 1,
+          avg_popularity: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    res.json(stats);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// @desc    Get explicit content by genre
+// @route   GET /api/dashboard/explicit-by-genre
+// @access  Public
+exports.getExplicitByGenre = async (req, res) => {
+  try {
+    const stats = await Track.aggregate([
+      {
+        $group: {
+          _id: '$genre',
+          total_count: { $sum: 1 },
+          explicit_count: {
+            $sum: { $cond: ['$explicit', 1, 0] }
+          }
+        }
+      },
+      {
+        $project: {
+          genre: '$_id',
+          total_count: 1,
+          explicit_count: 1,
+          explicit_percentage: {
+            $round: [
+              {
+                $multiply: [
+                  { $divide: ['$explicit_count', '$total_count'] },
+                  100
+                ]
+              },
+              2
+            ]
+          },
+          _id: 0
+        }
+      },
+      { $sort: { explicit_percentage: -1 } },
+      { $limit: 10 }
+    ]);
+
+    res.json(stats);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
