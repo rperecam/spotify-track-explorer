@@ -316,3 +316,23 @@ exports.getExplicitByGenre = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+// @desc    Get explicit content statistics
+// @route   GET /api/dashboard/explicit-stats
+// @access  Public
+exports.getExplicitStats = async (req, res) => {
+  try {
+    const [totalTracks, explicitCount] = await Promise.all([
+      Track.countDocuments(),
+      Track.countDocuments({ explicit: true })
+    ]);
+
+    res.json({
+      totalTracks,
+      explicitCount,
+      explicitPercentage: Math.round((explicitCount / totalTracks) * 100)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -6,5 +6,7 @@ router.get('/genre-stats', dashboardController.getGenreStats);
 router.get('/top-popular', dashboardController.getTopPopular);
 router.get('/artist-stats', dashboardController.getArtistStats);
 router.get('/explicit-by-genre', dashboardController.getExplicitByGenre);
+router.get('/explicit-stats', dashboardController.getExplicitStats);
+
 
 module.exports = router;

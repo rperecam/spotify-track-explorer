@@ -119,6 +119,16 @@ const { data: explicitByGenre } = useQuery({
   queryFn: api.getExplicitByGenre,
 });
 
+// Query 6
+const { data: explicitStats } = useQuery({
+  queryKey: ["explicit-stats"],
+  queryFn: async () => {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/dashboard/explicit-stats`);
+    if (!response.ok) throw new Error("Error al obtener estadísticas");
+    return await response.json();
+  },
+});
+
 
   // ============================================================================
   // Cálculos de métricas globales
@@ -136,8 +146,8 @@ const { data: explicitByGenre } = useQuery({
     : "0.00";
 
   // Porcentaje de canciones explícitas
-  const explicitCount = allTracks?.filter((t) => t.explicit).length || 0;
-  const explicitPercentage = totalTracks > 0 ? ((explicitCount / totalTracks) * 100).toFixed(1) : "0.0";
+  const explicitCount = explicitStats?.explicitCount || 0;
+  const explicitPercentage = explicitStats?.explicitPercentage || 0;
 
   // Género con mayor popularidad media
   const topGenreByPopularity = stats?.reduce((prev, current) =>
