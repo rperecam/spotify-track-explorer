@@ -249,17 +249,15 @@ exports.getArtistStats = async (req, res) => {
       {
         $group: {
           _id: '$artist_name',
-          track_count: { $sum: 1 },
-          avg_popularity: { $avg: '$popularity' }
+          track_count: { $sum: 1 }
         }
       },
-      { $sort: { avg_popularity: -1 } },
+      { $sort: { track_count: -1 } },
       { $limit: 7 },
       {
         $project: {
           artist_name: '$_id',
           track_count: 1,
-          avg_popularity: 1,
           _id: 0
         }
       }
@@ -271,6 +269,7 @@ exports.getArtistStats = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // @desc    Get explicit content by genre
 // @route   GET /api/dashboard/explicit-by-genre
@@ -336,3 +335,17 @@ exports.getExplicitStats = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// @desc    Get popularity distribution
+// @route   GET /api/dashboard/popularity-distribution
+// @access  Public
+exports.getPopularityDistribution = async (req, res) => {
+  try {
+    const tracks = await Track.find().select('popularity').lean();
+    res.json(tracks.map(track => track.popularity));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+

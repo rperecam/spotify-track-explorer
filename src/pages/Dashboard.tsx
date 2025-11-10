@@ -129,6 +129,17 @@ const { data: explicitStats } = useQuery({
   },
 });
 
+const { data: popularityData } = useQuery({
+  queryKey: ["popularity-distribution"],
+  queryFn: async () => {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/dashboard/popularity-distribution`
+    );
+    if (!response.ok) throw new Error("Error al obtener la distribución de popularidad");
+    return await response.json();
+  },
+});
+
 
   // ============================================================================
   // Cálculos de métricas globales
@@ -162,19 +173,20 @@ const { data: explicitStats } = useQuery({
   // ============================================================================
 
   // Histograma de popularidad (rangos de 10)
-  const popularityHistogram = allTracks
-    ? Array.from({ length: 10 }, (_, i) => {
-        const rangeStart = i * 10;
-        const rangeEnd = (i + 1) * 10;
-        const count = allTracks.filter(
-          (t) => t.popularity >= rangeStart && t.popularity < rangeEnd
-        ).length;
-        return {
-          range: `${rangeStart}-${rangeEnd}`,
-          count,
-        };
-      })
-    : [];
+const popularityHistogram = popularityData
+  ? Array.from({ length: 10 }, (_, i) => {
+      const rangeStart = i * 10;
+      const rangeEnd = (i + 1) * 10;
+      const count = popularityData.filter(
+        (pop: number) => pop >= rangeStart && pop < rangeEnd
+      ).length;
+      return {
+        range: `${rangeStart}-${rangeEnd}`,
+        count,
+      };
+    })
+  : [];
+
 
   // Dispersión energía vs bailabilidad (sample de 100 canciones)
   const energyDanceData = allTracks
