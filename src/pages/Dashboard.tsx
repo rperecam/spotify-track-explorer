@@ -509,7 +509,6 @@ const { data: explicitStats } = useQuery({
          <Card className="shadow-[var(--shadow-card)]">
            <CardHeader>
              <CardTitle className="flex items-center gap-2">
-               <TrendingUp className="h-5 w-5 text-primary" />
                Top Artistas por Tracks
              </CardTitle>
            </CardHeader>
@@ -612,10 +611,10 @@ const { data: explicitStats } = useQuery({
             </CardContent>
           </Card>
 
-          {/* Top 10 Pistas Más Populares */}
+          {/* Top 5 Pistas Más Populares */}
           <Card className="shadow-[var(--shadow-card)]">
             <CardHeader>
-              <CardTitle>Top 10 Pistas Más Populares</CardTitle>
+              <CardTitle>Top 5 Tracks Más Populares</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-[400px] overflow-y-auto">

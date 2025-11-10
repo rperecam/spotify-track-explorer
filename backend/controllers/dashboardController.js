@@ -224,7 +224,7 @@ exports.getTopPopular = async (req, res) => {
   try {
     const tracks = await Track.find()
       .sort({ popularity: -1 })
-      .limit(10)
+      .limit(5)
       .select('name artist_name popularity genre');
 
     res.json(tracks.map(track => ({
