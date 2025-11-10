@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Search, Music, TrendingUp, Activity } from "lucide-react";
+import { TrackDetailDrawer } from "@/components/TrackDetailDrawer";
 
 // ============================================================================
 // Interfaces de tipos de datos
@@ -32,6 +33,10 @@ interface Track {
   tempo: number;
 }
 
+interface TracksResponse {
+  tracks: Track[];
+}
+
 const Explore = () => {
   // ========================================================================
   // Estados: Query de búsqueda y filtros
@@ -47,6 +52,10 @@ const Explore = () => {
     maxPopularity: 100,
   });
 
+  // Estado para el drawer de detalle
+  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   // ========================================================================
   // Paginación y query
   // ========================================================================
@@ -54,7 +63,7 @@ const Explore = () => {
   const [offset, setOffset] = useState(0);
   const LIMIT = 15;
 
-  const { data: tracksData, isLoading, isFetching: isFetchingNextPage } = useQuery({
+  const { data: tracksData, isLoading, isFetching: isFetchingNextPage } = useQuery<TracksResponse>({
     queryKey: ["explore-tracks", searchQuery, filters, offset],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -80,7 +89,6 @@ const Explore = () => {
 
       return await response.json();
     },
-    keepPreviousData: true,
   });
 
   // ========================================================================
@@ -274,7 +282,11 @@ const Explore = () => {
               {allTracks.map((track) => (
                 <Card
                   key={`explore-track-${track.id}`}
-                  className="hover:shadow-[var(--shadow-hover)] transition-shadow"
+                  className="hover:shadow-[var(--shadow-hover)] transition-shadow cursor-pointer"
+                  onClick={() => {
+                    setSelectedTrack(track);
+                    setIsDrawerOpen(true);
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -342,6 +354,13 @@ const Explore = () => {
           )}
         </div>
       </main>
+
+      {/* Drawer de detalle de pista */}
+      <TrackDetailDrawer
+        track={selectedTrack}
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+      />
     </div>
   );
 };
