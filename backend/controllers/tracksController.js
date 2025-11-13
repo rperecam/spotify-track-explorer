@@ -12,6 +12,18 @@ const mapTrackResponse = (track) => {
   };
 };
 
+// @desc    Get all tracks without pagination
+// @route   GET /api/tracks/all
+// @access  Public
+exports.getAllTracks = async (req, res) => {
+  try {
+    const tracks = await Track.find().sort({ popularity: -1 });
+    res.json(tracks.map(mapTrackResponse));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 // @desc    Get all tracks with filters
 // @route   GET /api/tracks
@@ -143,19 +155,6 @@ exports.deleteTrack = async (req, res) => {
 
     res.json({ message: 'Pista eliminada exitosamente' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// @desc    Get all tracks without pagination
-// @route   GET /api/tracks/all
-// @access  Public
-exports.getAllTracks = async (req, res) => {
-  try {
-    const tracks = await Track.find().sort({ popularity: -1 });
-    res.json(tracks.map(mapTrackResponse));
-  } catch (error) {
-    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };

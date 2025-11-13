@@ -1,10 +1,13 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
+
+// Generamos el token del usuario
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
+// Metodo de registro del usuario
 exports.register = async (req, res) => {
   try {
     const { email, password, username } = req.body;
@@ -25,15 +28,7 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.getMe = async (req, res) => {
-  res.json({
-    id: req.user._id,
-    email: req.user.email,
-    username: req.user.username,
-    role: req.user.role // Agregar role
-  });
-};
-
+// Metodo de login del usuario
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -57,3 +52,12 @@ exports.login = async (req, res) => {
   }
 };
 
+// Metodo para obtener la informacion del usuario
+exports.getMe = async (req, res) => {
+  res.json({
+    id: req.user._id,
+    email: req.user.email,
+    username: req.user.username,
+    role: req.user.role // Agregar role
+  });
+};
