@@ -81,7 +81,6 @@ backend/
 │   └── auth.js          # Middleware de autenticación JWT
 ├── models/
 │   ├── User.js          # Modelo de usuario
-│   ├── Profile.js       # Modelo de perfil
 │   └── Track.js         # Modelo de track
 ├── routes/
 │   ├── auth.js          # Rutas de autenticación
@@ -213,20 +212,6 @@ Query params:
   email: String (unique),
   password: String (hashed),
   role: String ('user' | 'admin'),
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-### Colección: profiles
-
-```javascript
-{
-  _id: ObjectId,
-  user_id: ObjectId (ref: User),
-  display_name: String,
-  avatar_url: String,
-  bio: String,
   createdAt: Date,
   updatedAt: Date
 }

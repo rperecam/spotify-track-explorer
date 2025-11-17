@@ -133,97 +133,16 @@ sudo systemctl status mongod
    npm run dev
    ```
 
-   La aplicación estará disponible en `http://localhost:5173` (o el puerto que Vite asigne)
+   La aplicación estará disponible en `http://localhost:8080` (o el puerto que Vite asigne)
 
 ---
 
-### Insertar Datos de Prueba
-
-Para poblar la base de datos con datos de ejemplo, sigue estas instrucciones:
-
-#### Opción 1: Usando MongoDB Compass (GUI)
-
-1. Descarga e instala [MongoDB Compass](https://www.mongodb.com/products/compass)
-2. Conéctate a `mongodb://localhost:27017`
-3. Crea una base de datos llamada `music-tracks-explorer`
-4. Crea las colecciones: `tracks`, `users`, `profiles`
-5. Importa los datos de ejemplo desde los archivos JSON (ver sección de Datos de Ejemplo)
-
-#### Opción 2: Usando mongosh (CLI)
-
-1. Abre una terminal y conéctate a MongoDB:
-   ```bash
-   mongosh
-   ```
-
-2. Selecciona la base de datos:
-   ```javascript
-   use music-tracks-explorer
-   ```
-
-3. Inserta pistas de ejemplo:
-   ```javascript
-   db.tracks.insertMany([
-     {
-       name: "Blinding Lights",
-       artist_name: "The Weeknd",
-       year: 2019,
-       genre: "Synth-pop",
-       popularity: 95,
-       energy: 0.73,
-       danceability: 0.51,
-       tempo: 171.0,
-       duration_ms: 200040,
-       valence: 0.33
-     },
-     {
-       name: "Shape of You",
-       artist_name: "Ed Sheeran",
-       year: 2017,
-       genre: "Pop",
-       popularity: 93,
-       energy: 0.65,
-       danceability: 0.83,
-       tempo: 96.0,
-       duration_ms: 233713,
-       valence: 0.93
-     },
-     {
-       name: "Bohemian Rhapsody",
-       artist_name: "Queen",
-       year: 1975,
-       genre: "Rock",
-       popularity: 90,
-       energy: 0.38,
-       danceability: 0.29,
-       tempo: 72.0,
-       duration_ms: 354320,
-       valence: 0.35
-     }
-   ]);
-   ```
-
-4. Crea un usuario administrador:
-   ```javascript
-   db.users.insertOne({
-     email: "admin@example.com",
-     password: "$2a$10$5Hy8xDOPNH8pf7XYFQvzTu9p0yYKV0kP2aZhMm3Uw1q5Xz4Y6Z2K.", // Password: admin123
-     role: "admin",
-     createdAt: new Date(),
-     updatedAt: new Date()
-   });
-   ```
-
-   **Nota:** La contraseña hasheada corresponde a `admin123`. Para mayor seguridad, usa el endpoint de registro del backend para crear usuarios con contraseñas hasheadas correctamente.
-
----
 
 ### Verificar la Instalación
 
 1. **Backend:** Verifica que el servidor responda en `http://localhost:5000/api`
-2. **Frontend:** Abre `http://localhost:5173` en tu navegador
-3. **Base de Datos:** Usa MongoDB Compass o mongosh para verificar que las colecciones se hayan creado correctamente
-
+2. **Frontend:** Abre `http://localhost:8080` en tu navegador
+3. **Base de Datos:** Usa MongoDB Compass
 ---
 
 ## 📂 Estructura del Proyecto
@@ -314,21 +233,6 @@ Gestiona usuarios y roles de autenticación.
 **Índices:**
 ```javascript
 db.users.createIndex({ email: 1 }, { unique: true })
-```
-
-### Colección: `profiles`
-
-Información adicional de los usuarios.
-
-```javascript
-{
-  _id: ObjectId,
-  user_id: ObjectId,      // Referencia a users._id
-  display_name: String,
-  avatar_url: String,
-  createdAt: Date,
-  updatedAt: Date
-}
 ```
 
 ---
