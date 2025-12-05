@@ -1,4 +1,3 @@
-// `src/pages/Explore.tsx`
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/Navbar";
@@ -13,7 +12,7 @@ import { TrackDetailDrawer } from "@/components/TrackDetailDrawer";
 interface Track {
   id: string;
   name: string;
-  artist_name: string | string[]; // acepta array o string
+  artist_name: string | string[];
   album_name?: string;
   genre: string;
   explicit: boolean;
@@ -27,11 +26,16 @@ interface Track {
 
 interface TracksResponse {
   tracks: Track[];
-  pagination? : any;
+  pagination?: any;
 }
 
 const Explore = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+  // Estado inmediato para el input (lo que el usuario ve al escribir)
+  const [inputValue, setInputValue] = useState("");
+  
+  // Estado con retraso para la API (lo que realmente se busca)
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  
   const [filters, setFilters] = useState({
     minEnergy: 0,
     maxEnergy: 1,
@@ -47,12 +51,22 @@ const Explore = () => {
   const [offset, setOffset] = useState(0);
   const LIMIT = 15;
 
+  // EFECTO DEBOUNCE: Espera 500ms después de que el usuario deja de escribir
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(inputValue);
+    }, 500); // 500ms de retraso
+
+    return () => clearTimeout(timer);
+  }, [inputValue]);
+
+  // Usamos 'debouncedSearch' en lugar de 'inputValue' para la query
   const { data: tracksData, isLoading, isFetching: isFetchingNextPage } = useQuery<TracksResponse>({
-    queryKey: ["explore-tracks", searchQuery, filters, offset],
+    queryKey: ["explore-tracks", debouncedSearch, filters, offset],
     queryFn: async () => {
       const params = new URLSearchParams();
 
-      if (searchQuery) params.append("search", searchQuery);
+      if (debouncedSearch) params.append("search", debouncedSearch);
 
       params.append("energy_min", filters.minEnergy.toString());
       params.append("energy_max", filters.maxEnergy.toString());
@@ -73,10 +87,13 @@ const Explore = () => {
 
       return await response.json();
     },
+    // Evita queries innecesarias si el input está vacío pero no es requerido
+    enabled: true 
   });
 
   const [allTracks, setAllTracks] = useState<Track[]>([]);
 
+  // Actualizar lista cuando llega nueva data
   useEffect(() => {
     if (tracksData?.tracks) {
       if (offset === 0) {
@@ -87,10 +104,11 @@ const Explore = () => {
     }
   }, [tracksData, offset]);
 
+  // Resetear lista cuando cambian los filtros o la búsqueda (debounced)
   useEffect(() => {
     setOffset(0);
     setAllTracks([]);
-  }, [searchQuery, filters]);
+  }, [debouncedSearch, filters]);
 
   const hasMore = tracksData?.tracks?.length === LIMIT;
 
@@ -132,9 +150,15 @@ const Explore = () => {
                 <Input
                   id="search"
                   placeholder="Escribe el nombre de una canción o artista..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={inputValue} // Vinculado al estado inmediato
+                  onChange={(e) => setInputValue(e.target.value)} // Actualiza inmediato
                 />
+                {/* Opcional: Mostrar indicador visual de que está "pensando" o filtrando si hay diferencia */}
+                {inputValue !== debouncedSearch && (
+                  <p className="text-xs text-muted-foreground animate-pulse">
+                    Esperando a que termines de escribir...
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-6 md:grid-cols-3">
@@ -208,7 +232,8 @@ const Explore = () => {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setSearchQuery("");
+                    setInputValue(""); // Limpiar input visual
+                    setDebouncedSearch(""); // Limpiar búsqueda real
                     setFilters({
                       minEnergy: 0,
                       maxEnergy: 1,

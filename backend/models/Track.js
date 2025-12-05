@@ -2,10 +2,8 @@ const mongoose = require('mongoose');
 
 /**
  * Esquema de Mongoose para la colección 'tracks'.
- * Este esquema define la estructura, validaciones y restricciones
- * que deben cumplir los documentos que representan canciones.
+ * Definición de estructura y validaciones para las canciones.
  */
-
 const trackSchema = new mongoose.Schema(
   {
     // Nombre de la canción
@@ -16,9 +14,9 @@ const trackSchema = new mongoose.Schema(
       maxlength: [255, 'El nombre no puede exceder 255 caracteres']
     },
 
-    // Nombre o nombres del artista (puede ser string o array de strings)
+    // Nombre o nombres del artista
     artist_name: {
-      type: mongoose.Schema.Types.Mixed, // Permite tanto String como Array
+      type: mongoose.Schema.Types.Mixed, // Permite String o Array
       required: [true, 'El artista es requerido'],
       validate: {
         validator: function (v) {
@@ -43,20 +41,20 @@ const trackSchema = new mongoose.Schema(
       maxlength: [100, 'El género no puede exceder 100 caracteres']
     },
 
-    // Indica si la canción contiene contenido explícito
+    // Contenido explícito
     explicit: {
       type: Boolean,
       default: false
     },
 
-    // Duración en milisegundos
+    // Duración
     duration_ms: {
       type: Number,
       required: [true, 'La duración es requerida'],
       min: [0, 'La duración debe ser mayor a 0']
     },
 
-    // Nivel de popularidad (0-100)
+    // Popularidad (0-100)
     popularity: {
       type: Number,
       required: [true, 'La popularidad es requerida'],
@@ -64,7 +62,7 @@ const trackSchema = new mongoose.Schema(
       max: [100, 'La popularidad debe estar entre 0 y 100']
     },
 
-    // Medida de la bailabilidad (0-1)
+    // Bailabilidad (0-1)
     danceability: {
       type: Number,
       required: [true, 'La bailabilidad es requerida'],
@@ -72,7 +70,7 @@ const trackSchema = new mongoose.Schema(
       max: [1, 'La bailabilidad debe estar entre 0 y 1']
     },
 
-    // Medida de la energía (0-1)
+    // Energía (0-1)
     energy: {
       type: Number,
       required: [true, 'La energía es requerida'],
@@ -80,7 +78,7 @@ const trackSchema = new mongoose.Schema(
       max: [1, 'La energía debe estar entre 0 y 1']
     },
 
-    // Medida de la positividad o "felicidad" del tema (0-1)
+    // Valencia (0-1)
     valence: {
       type: Number,
       required: [true, 'La valencia es requerida'],
@@ -88,14 +86,14 @@ const trackSchema = new mongoose.Schema(
       max: [1, 'La valencia debe estar entre 0 y 1']
     },
 
-    // Tempo o velocidad del ritmo (BPM)
+    // Tempo (BPM)
     tempo: {
       type: Number,
       required: [true, 'El tempo es requerido'],
       min: [0, 'El tempo debe ser mayor a 0']
     },
 
-    // Número de artistas participantes
+    // Número de artistas
     num_artists: {
       type: Number,
       required: [true, 'El número de artistas es requerido'],
@@ -103,18 +101,21 @@ const trackSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true, // Agrega automáticamente createdAt y updatedAt
-    collection: 'tracks' // Nombre de la colección en MongoDB
+    timestamps: true,
+    collection: 'tracks'
   }
 );
 
 /**
- * Índices para mejorar el rendimiento en las consultas más comunes
+ * =========================================================
+ * ÍNDICES DE RENDIMIENTO (ESTRATEGIA DESACOPLADA)
+ * =========================================================
  */
-trackSchema.index({ popularity: -1 }); // Consultas ordenadas por popularidad
-trackSchema.index({ genre: 1, popularity: -1 }); // Filtrar por género y popularidad
-trackSchema.index({ artist_name: 1, popularity: -1 }); // Búsqueda por artista
-trackSchema.index({ explicit: 1, genre: 1 }); // Consultas combinadas por explicit y género
 
-// Exporta el modelo de Mongoose
+// 1. Popularidad General (Ordenamiento Global)
+// Se usa cuando no hay filtros activos.
+trackSchema.index({ popularity: -1 });
+
+
+
 module.exports = mongoose.model('Track', trackSchema);
