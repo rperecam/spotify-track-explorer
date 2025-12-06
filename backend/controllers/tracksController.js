@@ -2,33 +2,32 @@ const Track = require('../models/Track');
 
 // Función auxiliar para mapear _id a id
 const mapTrackResponse = (track) => {
-  const trackObj = track.toObject ? track.toObject() : track;
+  // Al usar .lean(), track no tiene métodos, es un POJO (Plain Old JS Object)
   return {
-    ...trackObj,
-    id: trackObj._id ? trackObj._id.toString() : trackObj.id,
-    artist_name: Array.isArray(trackObj.artist_name)
-      ? trackObj.artist_name
-      : trackObj.artist_name
+    ...track,
+    id: track._id ? track._id.toString() : track.id,
+    artist_name: Array.isArray(track.artist_name)
+      ? track.artist_name
+      : track.artist_name
   };
 };
 
-// @desc    Get all tracks without pagination
-// tracksController.js
+// @desc    Get all tracks without pagination (Optimized for internal use/lists)
 exports.getAllTracks = async (req, res) => {
   try {
-    // Agregamos .lean() aquí
+    // Limitamos a 2000 para seguridad y usamos lean() para rendimiento
     const tracks = await Track.find()
-      .collation({ locale: 'en', strength: 2 })
       .sort({ popularity: -1 })
-      .lean(); // <--- OPTIMIZACIÓN CRÍTICA
+      .limit(2000)
+      .lean();
 
     res.json(tracks.map(mapTrackResponse));
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  };
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
-// @desc    Get all tracks with Smart Filtering and Pipeline Optimization
+// @desc    Get tracks with Atlas Search (Hybrid) & Pagination
 // @route   GET /api/tracks
 exports.getTracks = async (req, res) => {
   try {
@@ -40,92 +39,103 @@ exports.getTracks = async (req, res) => {
       page = 1, limit = 50
     } = req.query;
 
-    const pageNum = parseInt(page);
+    const pageNum = Math.max(1, parseInt(page));
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    // --- 1. PREPARACIÓN DE FILTROS (Lógica "Smart Filtering") ---
-    // Calculamos el 'matchStage' ANTES de construir el pipeline para decidir el orden correcto.
+    // Valores por defecto para lógica de filtrado
+    const defaults = { eMin: 0, eMax: 1, dMin: 0, dMax: 1, pMin: 0, pMax: 100 };
 
-    const DEFAULTS = {
-      FLOAT_MIN: 0,
-      FLOAT_MAX: 1,
-      POP_MIN: 0,
-      POP_MAX: 100
-    };
+    // Parseo seguro
+    const eMin = parseFloat(energy_min) ?? 0;
+    const eMax = parseFloat(energy_max) ?? 1;
+    const dMin = parseFloat(danceability_min) ?? 0;
+    const dMax = parseFloat(danceability_max) ?? 1;
+    const pMin = parseInt(popularity_min) ?? 0;
+    const pMax = parseInt(popularity_max) ?? 100;
 
-    let matchStage = {};
-
-    // Parseamos valores
-    const eMin = parseFloat(energy_min) || 0;
-    const eMax = parseFloat(energy_max) || 1;
-    const dMin = parseFloat(danceability_min) || 0;
-    const dMax = parseFloat(danceability_max) || 1;
-    const pMin = parseInt(popularity_min) || 0;
-    const pMax = parseInt(popularity_max) || 100;
-
-    // ENERGÍA: Solo agregar si los valores NO son los de defecto (0 y 1)
-    if (eMin > DEFAULTS.FLOAT_MIN || eMax < DEFAULTS.FLOAT_MAX) {
-      matchStage.energy = {};
-      if (eMin > DEFAULTS.FLOAT_MIN) matchStage.energy.$gte = eMin;
-      if (eMax < DEFAULTS.FLOAT_MAX) matchStage.energy.$lte = eMax;
-    }
-
-    // BAILABILIDAD: Solo agregar si los valores NO son los de defecto
-    if (dMin > DEFAULTS.FLOAT_MIN || dMax < DEFAULTS.FLOAT_MAX) {
-      matchStage.danceability = {};
-      if (dMin > DEFAULTS.FLOAT_MIN) matchStage.danceability.$gte = dMin;
-      if (dMax < DEFAULTS.FLOAT_MAX) matchStage.danceability.$lte = dMax;
-    }
-
-    // POPULARIDAD (Filtro numérico): Solo agregar si NO son los de defecto
-    if (pMin > DEFAULTS.POP_MIN || pMax < DEFAULTS.POP_MAX) {
-      matchStage.popularity = {};
-      if (pMin > DEFAULTS.POP_MIN) matchStage.popularity.$gte = pMin;
-      if (pMax < DEFAULTS.POP_MAX) matchStage.popularity.$lte = pMax;
-    }
-
-    // --- 2. CONSTRUCCIÓN DEL PIPELINE (Orden Crítico) ---
     let pipeline = [];
 
+    // =================================================================================
+    // CASO A: BÚSQUEDA HÍBRIDA (Texto + Filtros Atlas)
+    // =================================================================================
     if (search) {
-      // CASO A: Con Búsqueda de Texto (Atlas Search)
-      // 1. $search siempre va primero
+      // 1. Construir cláusulas de filtro para Atlas Search
+      const filterClauses = [];
+
+      // Solo agregamos filtros si los valores difieren de los defaults (Optimización)
+      if (eMin > defaults.eMin || eMax < defaults.eMax) {
+        filterClauses.push({ range: { path: "energy", gte: eMin, lte: eMax } });
+      }
+      if (dMin > defaults.dMin || dMax < defaults.dMax) {
+        filterClauses.push({ range: { path: "danceability", gte: dMin, lte: dMax } });
+      }
+      if (pMin > defaults.pMin || pMax < defaults.pMax) {
+        filterClauses.push({ range: { path: "popularity", gte: pMin, lte: pMax } });
+      }
+
+      // 2. Stage $search
       pipeline.push({
         $search: {
           index: "default",
           compound: {
+            // SHOULD: Afecta el SCORE (Relevancia)
             should: [
-              { autocomplete: { query: search, path: "name", fuzzy: { maxEdits: 1 } } },
-              { autocomplete: { query: search, path: "artist_name", fuzzy: { maxEdits: 1 } } }
+              {
+                autocomplete: {
+                  query: search,
+                  path: "name",
+                  tokenOrder: "sequential",
+                  fuzzy: { maxEdits: 1 }
+                }
+              },
+              {
+                autocomplete: {
+                  query: search,
+                  path: "artist_name",
+                  tokenOrder: "sequential",
+                  fuzzy: { maxEdits: 1 }
+                }
+              }
             ],
-            minimumShouldMatch: 1
+            minimumShouldMatch: 1,
+            // FILTER: Recorta resultados (Rápido, binario)
+            filter: filterClauses
           }
         }
       });
 
-      // 2. Aplicamos filtros después de la búsqueda
-      if (Object.keys(matchStage).length > 0) {
-        pipeline.push({ $match: matchStage });
-      }
-
-      // Nota: No agregamos $sort aquí para mantener la relevancia (score) de la búsqueda.
+      // 3. Proyección optimizada (Solo campos necesarios para la UI)
+      pipeline.push({
+        $project: {
+          name: 1, artist_name: 1, album_name: 1, genre: 1,
+          explicit: 1, duration_ms: 1, popularity: 1,
+          danceability: 1, energy: 1, valence: 1, tempo: 1,
+          _id: 1
+        }
+      });
 
     } else {
-      // CASO B: Sin Búsqueda (Navegación / Sliders)
-      // CORRECCIÓN IMPORTANTE: Aplicamos $match ANTES que $sort.
-      // Esto permite que Mongo use el índice compuesto correcto (ej. danceability_1_popularity_-1)
-      // para filtrar ("Equality/Range") antes de ordenar ("Sort").
+      // =================================================================================
+      // CASO B: FILTRADO ESTÁNDAR (Sin Texto - Usa Índices Compuestos de MongoDB)
+      // =================================================================================
+      const matchStage = {};
+
+      if (eMin > defaults.eMin || eMax < defaults.eMax) matchStage.energy = { $gte: eMin, $lte: eMax };
+      if (dMin > defaults.dMin || dMax < defaults.dMax) matchStage.danceability = { $gte: dMin, $lte: dMax };
+      if (pMin > defaults.pMin || pMax < defaults.pMax) matchStage.popularity = { $gte: pMin, $lte: pMax };
 
       if (Object.keys(matchStage).length > 0) {
         pipeline.push({ $match: matchStage });
       }
 
-      // Siempre ordenamos por popularidad al final
+      // Siempre ordenamos por popularidad si no hay búsqueda por relevancia
       pipeline.push({ $sort: { popularity: -1 } });
     }
 
-    // --- 3. PAGINACIÓN Y METADATA ---
+    // =================================================================================
+    // PAGINACIÓN EFICIENTE ($facet)
+    // =================================================================================
     pipeline.push({
       $facet: {
         metadata: [{ $count: "total" }],
@@ -152,10 +162,11 @@ exports.getTracks = async (req, res) => {
   }
 };
 
-// --- MÉTODOS CRUD ESTÁNDAR ---
+// --- MÉTODOS CRUD ESTÁNDAR (Optimizados con lean donde aplica) ---
+
 exports.getTrackById = async (req, res) => {
   try {
-    const track = await Track.findById(req.params.id);
+    const track = await Track.findById(req.params.id).lean();
     if (!track) return res.status(404).json({ error: 'Pista no encontrada' });
     res.json(mapTrackResponse(track));
   } catch (error) {
@@ -166,6 +177,7 @@ exports.getTrackById = async (req, res) => {
 exports.createTrack = async (req, res) => {
   try {
     const track = await Track.create(req.body);
+    // Create no soporta lean(), devuelve el documento hidratado
     res.status(201).json(mapTrackResponse(track));
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -174,7 +186,10 @@ exports.createTrack = async (req, res) => {
 
 exports.updateTrack = async (req, res) => {
   try {
-    const track = await Track.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const track = await Track.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    }).lean();
     if (!track) return res.status(404).json({ error: 'Pista no encontrada' });
     res.json(mapTrackResponse(track));
   } catch (error) {
@@ -184,7 +199,7 @@ exports.updateTrack = async (req, res) => {
 
 exports.deleteTrack = async (req, res) => {
   try {
-    const track = await Track.findByIdAndDelete(req.params.id);
+    const track = await Track.findByIdAndDelete(req.params.id).lean();
     if (!track) return res.status(404).json({ error: 'Pista no encontrada' });
     res.json({ message: 'Pista eliminada exitosamente' });
   } catch (error) {
