@@ -116,6 +116,7 @@ const trackSchema = new mongoose.Schema(
 // Se usa cuando no hay filtros activos.
 trackSchema.index({ popularity: -1 });
 
-
+// 2. Filtro de Contenido Explícito - Dashboard
+trackSchema.index({ explicit: 1 });
 
 module.exports = mongoose.model('Track', trackSchema);

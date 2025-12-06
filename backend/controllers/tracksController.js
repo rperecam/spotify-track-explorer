@@ -13,16 +13,20 @@ const mapTrackResponse = (track) => {
 };
 
 // @desc    Get all tracks without pagination
+// tracksController.js
 exports.getAllTracks = async (req, res) => {
   try {
+    // Agregamos .lean() aquí
     const tracks = await Track.find()
       .collation({ locale: 'en', strength: 2 })
-      .sort({ popularity: -1 });
+      .sort({ popularity: -1 })
+      .lean(); // <--- OPTIMIZACIÓN CRÍTICA
+
     res.json(tracks.map(mapTrackResponse));
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
 
 // @desc    Get all tracks with Smart Filtering and Pipeline Optimization
 // @route   GET /api/tracks

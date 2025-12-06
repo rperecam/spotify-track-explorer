@@ -3,88 +3,57 @@ const Track = require('../models/Track');
 // @desc    Get dashboard statistics
 // @route   GET /api/dashboard/stats
 // @access  Public
+// dashboardController.js
+
 exports.getDashboardStats = async (req, res) => {
   try {
-    const [
-      totalTracks,
-      avgMetrics,
-      topArtist,
-      topTracks,
-      explicitStats
-    ] = await Promise.all([
-      // Total de pistas
-      Track.countDocuments(),
-
-      // Métricas promedio
-      Track.aggregate([
-        {
-          $group: {
-            _id: null,
-            avgPopularity: { $avg: '$popularity' },
-            avgDuration: { $avg: '$duration_ms' }
-          }
+    const results = await Track.aggregate([
+      {
+        $facet: {
+          // 1. Totales y Promedios Globales
+          "globalStats": [
+            {
+              $group: {
+                _id: null,
+                totalTracks: { $sum: 1 },
+                avgPopularity: { $avg: "$popularity" },
+                avgDuration: { $avg: "$duration_ms" },
+                explicitCount: { $sum: { $cond: ["$explicit", 1, 0] } }
+              }
+            }
+          ],
+          // 2. Artista Top
+          "topArtist": [
+            { $group: { _id: "$artist_name", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 1 }
+          ],
+          // 3. Top 10 Tracks (Proyección ligera)
+          "topTracks": [
+            { $sort: { popularity: -1 } },
+            { $limit: 10 },
+            { $project: { name: 1, artist_name: 1, popularity: 1, genre: 1 } }
+          ]
         }
-      ]),
-
-      // Artista Top (por cantidad de tracks)
-      Track.aggregate([
-        {
-          $group: {
-            _id: '$artist_name',
-            track_count: { $sum: 1 },
-            avg_popularity: { $avg: '$popularity' }
-          }
-        },
-        { $sort: { track_count: -1 } },
-        { $limit: 1 },
-        {
-          $project: {
-            artist_name: '$_id',
-            track_count: 1,
-            avg_popularity: 1,
-            _id: 0
-          }
-        }
-      ]),
-
-      // Top 10 pistas más populares
-      Track.find()
-        .sort({ popularity: -1 })
-        .limit(10)
-        .select('name artist_name popularity genre'),
-
-      // Estadísticas de contenido explícito
-      Track.aggregate([
-        {
-          $facet: {
-            explicit: [
-              { $match: { explicit: true } },
-              { $count: 'count' }
-            ]
-          }
-        }
-      ])
+      }
     ]);
 
-    const explicitCount = explicitStats[0].explicit[0]?.count || 0;
+    // Procesar resultados (siempre devuelve un array con 1 objeto)
+    const data = results[0];
+    const stats = data.globalStats[0] || {};
+    const topArtist = data.topArtist[0] || {};
 
     res.json({
-      totalTracks,
-      avgPopularity: Math.round(avgMetrics[0]?.avgPopularity || 0),
-      avgDuration: Math.round((avgMetrics[0]?.avgDuration || 0) / 60000 * 10) / 10,
-      topArtist: topArtist[0]?.artist_name || 'N/A',
-      explicitCount,
-      explicitPercentage: Math.round((explicitCount / totalTracks) * 100),
-      topTracks: topTracks.map(track => ({
-        id: track._id.toString(),
-        name: track.name,
-        artist_name: track.artist_name,
-        popularity: track.popularity,
-        genre: track.genre
-      }))
+      totalTracks: stats.totalTracks || 0,
+      avgPopularity: Math.round(stats.avgPopularity || 0),
+      avgDuration: Math.round((stats.avgDuration || 0) / 60000 * 10) / 10,
+      explicitCount: stats.explicitCount || 0,
+      explicitPercentage: stats.totalTracks ? Math.round((stats.explicitCount / stats.totalTracks) * 100) : 0,
+      topArtist: topArtist._id || 'N/A',
+      topTracks: data.topTracks.map(t => ({...t, id: t._id}))
     });
+
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
