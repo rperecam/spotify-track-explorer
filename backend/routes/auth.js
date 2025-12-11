@@ -1,3 +1,4 @@
+// javascript
 // backend/routes/auth.js
 const express = require('express');
 const router = express.Router();
@@ -76,7 +77,20 @@ router.post('/login', login);
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Datos del usuario
+ *         description: Datos del usuario autenticado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 role:
+ *                   type: string
  *       401:
  *         description: No autorizado
  */

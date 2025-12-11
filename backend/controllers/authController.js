@@ -54,10 +54,18 @@ exports.login = async (req, res) => {
 
 // Metodo para obtener la informacion del usuario
 exports.getMe = async (req, res) => {
-  res.json({
-    id: req.user._id,
-    email: req.user.email,
-    username: req.user.username,
-    role: req.user.role // Agregar role
-  });
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+
+    return res.json({
+      id: req.user._id,
+      email: req.user.email,
+      username: req.user.username,
+      role: req.user.role
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
 };
