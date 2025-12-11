@@ -1,8 +1,9 @@
+// backend/routes/tracks.js
 const express = require('express');
 const router = express.Router();
 const {
   getTracks,
-  getAllTracks, // Importado correctamente
+  getAllTracks,
   getTrackById,
   createTrack,
   updateTrack,
@@ -10,25 +11,127 @@ const {
 } = require('../controllers/tracksController');
 const { protect, admin } = require('../middleware/auth');
 
-// ==========================================
-// Rutas Públicas
-// ==========================================
-
-// Obtener pistas con paginación y filtros (Búsqueda optimizada)
+/**
+ * @openapi
+ * /tracks:
+ *   get:
+ *     summary: Listar pistas con filtros y paginación
+ *     tags:
+ *       - Tracks
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista paginada de pistas
+ */
 router.get('/', getTracks);
 
-// Obtener TODAS las pistas (sin paginación)
-// IMPORTANTE: Esta ruta debe ir ANTES de /:id
+/**
+ * @openapi
+ * /tracks/all:
+ *   get:
+ *     summary: Obtener todas las pistas (limitado internamente)
+ *     tags:
+ *       - Tracks
+ *     responses:
+ *       200:
+ *         description: Lista de pistas
+ */
 router.get('/all', getAllTracks);
 
-// Obtener una pista específica por ID
+/**
+ * @openapi
+ * /tracks/{id}:
+ *   get:
+ *     summary: Obtener pista por ID
+ *     tags:
+ *       - Tracks
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Pista encontrada
+ *       404:
+ *         description: Pista no encontrada
+ */
 router.get('/:id', getTrackById);
 
-// ==========================================
-// Rutas Protegidas (Admin)
-// ==========================================
+/**
+ * @openapi
+ * /tracks:
+ *   post:
+ *     summary: Crear una nueva pista
+ *     tags:
+ *       - Tracks
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Pista creada
+ *       401:
+ *         description: No autorizado
+ */
 router.post('/', protect, admin, createTrack);
+
+/**
+ * @openapi
+ * /tracks/{id}:
+ *   put:
+ *     summary: Actualizar una pista
+ *     tags:
+ *       - Tracks
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Pista actualizada
+ *       404:
+ *         description: Pista no encontrada
+ */
 router.put('/:id', protect, admin, updateTrack);
+
+/**
+ * @openapi
+ * /tracks/{id}:
+ *   delete:
+ *     summary: Eliminar una pista
+ *     tags:
+ *       - Tracks
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Pista eliminada
+ *       404:
+ *         description: Pista no encontrada
+ */
 router.delete('/:id', protect, admin, deleteTrack);
 
 module.exports = router;
